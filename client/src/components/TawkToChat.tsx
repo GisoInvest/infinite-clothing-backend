@@ -12,15 +12,9 @@ import { useEffect } from 'react';
 
 export default function TawkToChat() {
   useEffect(() => {
-    // Replace these with your actual Tawk.to IDs
-    const PROPERTY_ID = 'YOUR_PROPERTY_ID'; // e.g., '5f1234567890abcdef123456'
-    const WIDGET_ID = 'default'; // Usually 'default' unless you have multiple widgets
-    
-    // Only load if IDs are configured
-    if (PROPERTY_ID === 'YOUR_PROPERTY_ID') {
-      console.warn('Tawk.to chat widget not configured. Please add your Property ID and Widget ID.');
-      return;
-    }
+    // Tawk.to IDs from dashboard
+    const PROPERTY_ID = '69224e34430d9c1961f49b23';
+    const WIDGET_ID = '1jan02vtq';
 
     // Tawk.to script injection
     const script = document.createElement('script');
