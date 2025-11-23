@@ -125,7 +125,7 @@ export default function AdminOutfits() {
         }
 
         const uploadResult = await uploadResponse.json();
-        imagePath = uploadResult.path;
+        imagePath = uploadResult.url;
       }
 
       const data = {

@@ -78,9 +78,14 @@ export default function ShopTheLook() {
                       src={outfit.image}
                       alt={outfit.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        console.error('Failed to load outfit image:', outfit.image);
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                      }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center fallback-icon">
                       <ShoppingCart className="h-20 w-20 text-muted-foreground" />
                     </div>
                   )}
