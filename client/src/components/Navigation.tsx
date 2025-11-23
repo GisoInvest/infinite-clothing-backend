@@ -54,6 +54,15 @@ export default function Navigation() {
                 About
               </a>
             </Link>
+            <Link href="/track-order">
+              <a
+                className={`text-sm font-medium transition-all hover:text-primary ${
+                  isActive('/track-order') ? 'text-primary glow-text' : 'text-foreground'
+                }`}
+              >
+                Track Order
+              </a>
+            </Link>
           </div>
 
           {/* Right side actions */}
@@ -108,6 +117,16 @@ export default function Navigation() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   About
+                </a>
+              </Link>
+              <Link href="/track-order">
+                <a
+                  className={`text-sm font-medium transition-all hover:text-primary ${
+                    isActive('/track-order') ? 'text-primary glow-text' : 'text-foreground'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Track Order
                 </a>
               </Link>
             </div>

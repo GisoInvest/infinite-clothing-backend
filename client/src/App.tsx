@@ -34,6 +34,7 @@ import BlogPost from "./pages/BlogPost";
 import BlogCategories from "./pages/BlogCategories";
 import Shop from "./pages/Shop";
 import Wishlist from "./pages/Wishlist";
+import TrackOrder from "./pages/TrackOrder";
 import TawkToChat from "./components/TawkToChat";
 
 function Router() {
@@ -51,6 +52,7 @@ function Router() {
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/order-confirmation" component={OrderConfirmation} />
+      <Route path="/track-order" component={TrackOrder} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/return-policy" component={ReturnPolicy} />

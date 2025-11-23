@@ -133,6 +133,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/track-order">
+                  <a className="text-muted-foreground hover:text-primary transition-colors">Track Order</a>
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact">
                   <a className="text-muted-foreground hover:text-primary transition-colors">Contact Us</a>
                 </Link>
