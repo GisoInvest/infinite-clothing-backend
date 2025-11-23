@@ -28,6 +28,7 @@ import AdminAudio from "./pages/admin/Audio";
 import AdminSettings from "./pages/AdminSettings";
 import AdminBlog from "./pages/admin/Blog";
 import AdminEmailCampaigns from "./pages/admin/EmailCampaigns";
+import AdminOutfits from "./pages/admin/Outfits";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import BlogCategories from "./pages/BlogCategories";
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/blog" component={AdminBlog} />
       <Route path="/admin/email-campaigns" component={AdminEmailCampaigns} />
+      <Route path="/admin/outfits" component={AdminOutfits} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
