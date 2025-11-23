@@ -6,7 +6,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { createPaymentIntent, confirmPaymentIntent } from "./payment";
-import { sendOrderConfirmationEmail, sendAdminOrderNotification } from "./email";
+import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusEmail, sendOrderCancellationEmail } from "./email";
 import { assistantRouter } from "./routers/assistant";
 
 // Admin-only procedure (simple cookie-based auth)
@@ -205,7 +205,20 @@ export const appRouter = router({
         paymentIntentId: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const order = await db.createOrder(input);
+        // Set cancellation deadline to 24 hours from now
+        const cancellationDeadline = new Date();
+        cancellationDeadline.setHours(cancellationDeadline.getHours() + 24);
+        
+        const order = await db.createOrder({
+          ...input,
+          cancellationDeadline,
+          canBeCancelled: true,
+          statusHistory: [{
+            status: 'pending',
+            timestamp: new Date().toISOString(),
+            notes: 'Order created',
+          }],
+        });
         
         // Send confirmation emails
         try {
@@ -268,18 +281,127 @@ export const appRouter = router({
     updateStatus: adminProcedure
       .input(z.object({
         id: z.number(),
-        status: z.enum(["pending", "processing", "shipped", "delivered", "cancelled", "refunded"]),
+        status: z.enum(["pending", "processing", "in_production", "shipped", "delivered", "cancelled", "refunded"]),
         trackingNumber: z.string().optional(),
+        shippingCarrier: z.string().optional(),
+        estimatedDelivery: z.string().optional(), // ISO date string
+        tapstitchOrderId: z.string().optional(),
+        internalNotes: z.string().optional(),
         shippingLabelUrl: z.string().optional(),
         notes: z.string().optional(),
+        sendEmail: z.boolean().default(false), // Whether to send status update email
       }))
       .mutation(async ({ input }) => {
-        const { id, ...updates } = input;
-        const order = await db.updateOrder(id, updates);
+        const { id, sendEmail, ...updates } = input;
+        
+        // Get current order to track status history
+        const currentOrder = await db.getOrder(id);
+        if (!currentOrder) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+        }
+        
+        // Build status history entry
+        const statusHistory = currentOrder.statusHistory as any[] || [];
+        if (updates.status && updates.status !== currentOrder.status) {
+          statusHistory.push({
+            status: updates.status,
+            timestamp: new Date().toISOString(),
+            updatedBy: 'admin',
+            notes: updates.internalNotes || updates.notes,
+          });
+        }
+        
+        // Update order with status history
+        const order = await db.updateOrder(id, {
+          ...updates,
+          statusHistory,
+        });
+        
         if (!order) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
         }
+        
+        // Send email notification if requested
+        if (sendEmail && updates.status) {
+          try {
+            await sendOrderStatusEmail({
+              orderNumber: order.orderNumber,
+              customerName: order.customerName,
+              customerEmail: order.customerEmail,
+              status: updates.status,
+              trackingNumber: updates.trackingNumber || order.trackingNumber,
+              shippingCarrier: updates.shippingCarrier || order.shippingCarrier,
+              estimatedDelivery: updates.estimatedDelivery,
+            });
+          } catch (emailError) {
+            console.error('Failed to send status update email:', emailError);
+            // Don't fail the update if email fails
+          }
+        }
+        
         return order;
+      }),
+
+    cancelOrder: publicProcedure
+      .input(z.object({
+        orderNumber: z.string(),
+        customerEmail: z.string().email(),
+      }))
+      .mutation(async ({ input }) => {
+        // Get order by number
+        const order = await db.getOrderByNumber(input.orderNumber);
+        if (!order) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Order not found' });
+        }
+        
+        // Verify email matches
+        if (order.customerEmail !== input.customerEmail) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Email does not match order' });
+        }
+        
+        // Check if order can be cancelled
+        if (!order.canBeCancelled) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Order cancellation window has expired (24 hours)' });
+        }
+        
+        // Check if cancellation deadline has passed
+        if (order.cancellationDeadline && new Date() > new Date(order.cancellationDeadline)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Order cancellation window has expired' });
+        }
+        
+        // Check if order is already cancelled or shipped
+        if (['cancelled', 'shipped', 'delivered'].includes(order.status)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `Cannot cancel order with status: ${order.status}` });
+        }
+        
+        // Update order status to cancelled
+        const statusHistory = order.statusHistory as any[] || [];
+        statusHistory.push({
+          status: 'cancelled',
+          timestamp: new Date().toISOString(),
+          updatedBy: 'customer',
+          notes: 'Cancelled by customer',
+        });
+        
+        const updatedOrder = await db.updateOrder(order.id, {
+          status: 'cancelled',
+          canBeCancelled: false,
+          statusHistory,
+        });
+        
+        // Send cancellation confirmation email
+        try {
+          await sendOrderCancellationEmail({
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            total: order.total,
+          });
+        } catch (emailError) {
+          console.error('Failed to send cancellation email:', emailError);
+        }
+        
+        return updatedOrder;
       }),
 
     updatePaymentStatus: adminProcedure

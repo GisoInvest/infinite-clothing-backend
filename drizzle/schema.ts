@@ -83,6 +83,7 @@ export const orders = mysqlTable("orders", {
   status: mysqlEnum("status", [
     "pending",
     "processing",
+    "in_production",
     "shipped",
     "delivered",
     "cancelled",
@@ -92,6 +93,18 @@ export const orders = mysqlTable("orders", {
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "succeeded", "failed"]).default("pending").notNull(),
   shippingLabelUrl: text("shippingLabelUrl"),
   trackingNumber: varchar("trackingNumber", { length: 255 }),
+  shippingCarrier: varchar("shippingCarrier", { length: 100 }), // e.g., Royal Mail, DPD, Hermes
+  estimatedDelivery: date("estimatedDelivery"),
+  tapstitchOrderId: varchar("tapstitchOrderId", { length: 255 }), // Reference to Tapstitch order
+  internalNotes: text("internalNotes"), // Admin-only notes
+  statusHistory: json("statusHistory").$type<Array<{
+    status: string;
+    timestamp: string;
+    updatedBy?: string;
+    notes?: string;
+  }>>().default([]),
+  canBeCancelled: boolean("canBeCancelled").default(true).notNull(), // Auto-set to false after 24hrs
+  cancellationDeadline: timestamp("cancellationDeadline"), // 24 hours from order creation
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
