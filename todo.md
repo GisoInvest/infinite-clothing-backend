@@ -474,8 +474,9 @@
 ### 3. Live Chat Support
 - [x] Choose chat widget provider (Tawk.to)
 - [x] Integrate chat widget script
-- [x] Position in bottom-right corner (automatic)
+- [x] Position in bottom-left corner (to avoid Aria on right)
 - [x] Created TawkToChat component with setup instructions
+- [x] Configured widget to not overlap with Aria AI assistant
 - [ ] User needs to sign up at tawk.to and add Property ID
 - [ ] Customize chat widget colors in Tawk.to dashboard
 - [ ] Set welcome message in Tawk.to dashboard

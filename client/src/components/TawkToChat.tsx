@@ -29,6 +29,26 @@ export default function TawkToChat() {
     script.charset = 'UTF-8';
     script.setAttribute('crossorigin', '*');
     
+    // Configure Tawk.to to position on the left side (to avoid Aria on the right)
+    (window as any).Tawk_API = (window as any).Tawk_API || {};
+    (window as any).Tawk_LoadStart = new Date();
+    
+    // Position widget on bottom-left instead of bottom-right
+    (window as any).Tawk_API.customStyle = {
+      visibility: {
+        desktop: {
+          position: 'bl', // bottom-left
+          xOffset: 20,
+          yOffset: 20
+        },
+        mobile: {
+          position: 'bl', // bottom-left
+          xOffset: 10,
+          yOffset: 10
+        }
+      }
+    };
+    
     document.body.appendChild(script);
 
     // Cleanup
@@ -69,7 +89,7 @@ export default function TawkToChat() {
  * 
  * 4. Add to your app:
  *    - Import and add <TawkToChat /> to your App.tsx or main layout
- *    - The widget will appear in the bottom-right corner automatically
+ *    - The widget will appear in the bottom-left corner (Aria is on the right)
  * 
  * 5. Customization (in Tawk.to dashboard):
  *    - Widget appearance: Colors, position, size
