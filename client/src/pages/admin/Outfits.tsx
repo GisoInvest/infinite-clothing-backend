@@ -36,6 +36,8 @@ export default function AdminOutfits() {
     displayOrder: '0',
   });
   const [productIdInput, setProductIdInput] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
 
   const { data: outfits, isLoading, refetch } = trpc.outfits.getAll.useQuery();
   const { data: products } = trpc.products.getAll.useQuery({});
@@ -54,6 +56,8 @@ export default function AdminOutfits() {
       displayOrder: '0',
     });
     setProductIdInput('');
+    setImageFile(null);
+    setImagePreview('');
     setEditingOutfit(null);
   };
 
@@ -68,6 +72,7 @@ export default function AdminOutfits() {
       isActive: outfit.isActive,
       displayOrder: outfit.displayOrder?.toString() || '0',
     });
+    setImagePreview(outfit.image || '');
     setIsDialogOpen(true);
   };
 
@@ -97,11 +102,36 @@ export default function AdminOutfits() {
       return;
     }
 
+    if (!imageFile && !editingOutfit) {
+      toast.error('Please upload an image');
+      return;
+    }
+
     try {
+      let imagePath = formData.image;
+
+      // Upload image if a new file was selected
+      if (imageFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', imageFile);
+
+        const uploadResponse = await fetch('/api/upload/single', {
+          method: 'POST',
+          body: formDataUpload,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const uploadResult = await uploadResponse.json();
+        imagePath = uploadResult.path;
+      }
+
       const data = {
         name: formData.name,
         description: formData.description || undefined,
-        image: formData.image || undefined,
+        image: imagePath || undefined,
         productIds: formData.productIds,
         totalPrice: Math.round(parseFloat(formData.totalPrice) * 100),
         isActive: formData.isActive,
@@ -199,16 +229,35 @@ export default function AdminOutfits() {
                 </div>
 
                 <div>
-                  <Label htmlFor="image">Image URL *</Label>
+                  <Label htmlFor="image">Outfit Image *</Label>
                   <Input
                     id="image"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="/outfits/outfit-image.png"
-                    required
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setImageFile(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImagePreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="cursor-pointer"
                   />
+                  {imagePreview && (
+                    <div className="mt-2">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full max-w-xs h-auto rounded-lg border border-primary/20"
+                      />
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1">
-                    Use relative path (e.g., /outfits/image.png) or full URL
+                    Upload an image file (JPG, PNG, etc.)
                   </p>
                 </div>
 
