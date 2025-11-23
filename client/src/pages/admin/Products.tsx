@@ -502,7 +502,12 @@ export default function AdminProducts() {
             {products.map((product) => (
               <Card key={product.id} className="border-primary/20">
                 <CardHeader>
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{product.name}</CardTitle>
+                    <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-1 rounded">
+                      ID: {product.id}
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {product.category} • {product.subcategory}
                   </p>
