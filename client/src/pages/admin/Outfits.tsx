@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from 'lucide-react';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 
 export default function AdminOutfits() {
@@ -44,6 +45,26 @@ export default function AdminOutfits() {
   const createOutfit = trpc.outfits.create.useMutation();
   const updateOutfit = trpc.outfits.update.useMutation();
   const deleteOutfit = trpc.outfits.delete.useMutation();
+
+  // Effect to calculate total price automatically
+  useEffect(() => {
+    if (products && formData.productIds.length > 0) {
+      const total = formData.productIds.reduce((sum, id) => {
+        const product = products.find(p => p.id === id);
+        return sum + (product ? product.price : 0);
+      }, 0);
+      // Update totalPrice in formData as a string with 2 decimal places
+      setFormData(prev => ({
+        ...prev,
+        totalPrice: (total / 100).toFixed(2),
+      }));
+    } else if (formData.productIds.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        totalPrice: '',
+      }));
+    }
+  }, [formData.productIds, products]);
 
   const resetForm = () => {
     setFormData({
@@ -320,12 +341,12 @@ export default function AdminOutfits() {
                   <Label htmlFor="totalPrice">Total Price (£) *</Label>
                   <Input
                     id="totalPrice"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={formData.totalPrice}
-                    onChange={(e) => setFormData({ ...formData, totalPrice: e.target.value })}
-                    placeholder="49.99"
+                    placeholder="Calculated automatically"
+                    readOnly
                     required
+                    className="bg-muted/50 cursor-not-allowed"
                   />
                 </div>
 
