@@ -55,11 +55,21 @@ export const appRouter = router({
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        const product = await db.getProduct(input.id);
-        if (!product || !product.active) {
+        const product = await db.getProductById(input.id);
+        if (!product) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' });
         }
         return product;
+      }),
+
+    getSizeGuide: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const product = await db.getProductById(input.id);
+        if (!product) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' });
+        }
+        return product.sizeGuide;
       }),
 
     // Admin endpoints
