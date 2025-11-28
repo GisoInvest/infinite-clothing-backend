@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Link } from 'react-router-dom'; // Use react-router-dom Link for ProductCard
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import ProductCard from '@/components/ProductCard'; // Import the memoized component
 import { trpc } from '@/lib/trpc';
 import { Loader2, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -25,24 +24,25 @@ interface ProductListProps {
 
 export default function ProductList({ category, title, subcategories }: ProductListProps) {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('all');
-  const { addItem } = useCart();
-
+  // Removed addItem as it's not used in this component anymore
+  // const { addItem } = useCart();
   const { data: products, isLoading } = trpc.products.getAll.useQuery({
     category,
     subcategory: selectedSubcategory === 'all' ? undefined : selectedSubcategory,
   });
 
-  const handleAddToCart = (product: any) => {
-    addItem({
-      productId: product.id,
-      productName: product.name,
-      price: product.price,
-      image: product.images?.[0],
-      category: product.category,
-      subcategory: product.subcategory,
-    });
-    toast.success(`${product.name} added to cart!`);
-  };
+  // Removed handleAddToCart as it's now handled within ProductCard (View button)
+  // const handleAddToCart = (product: any) => {
+  //   addItem({
+  //     productId: product.id,
+  //     productName: product.name,
+  //     price: product.price,
+  //     image: product.images?.[0],
+  //     category: product.category,
+  //     subcategory: product.subcategory,
+  //   });
+  //   toast.success(`${product.name} added to cart!`);
+  // };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -98,62 +98,7 @@ export default function ProductList({ category, title, subcategories }: ProductL
             ) : products && products.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {products.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="group overflow-hidden border-primary/20 hover:border-primary/50 transition-all duration-300 glow-border"
-                  >
-                    <Link href={`/product/${product.id}`}>
-                      <a>
-                        <div className="aspect-square overflow-hidden bg-muted">
-                          {product.images && product.images.length > 0 ? (
-                            <img
-                              src={product.images[0]}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ShoppingBag className="h-20 w-20 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                      </a>
-                    </Link>
-                    <CardContent className="p-4">
-                      <Link href={`/product/${product.id}`}>
-                        <a>
-                          <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
-                            {product.name}
-                          </h3>
-                        </a>
-                      </Link>
-                      <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">
-                        {product.subcategory}
-                      </p>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="mb-3">
-                        <StarRating rating={(product as any).averageRating || 0} size={16} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-primary">
-                          £{(product.price / 100).toFixed(2)}
-                        </span>
-                        <Link href={`/product/${product.id}`}>
-                          <a>
-                            <Button
-                              size="sm"
-                              className="glow-box"
-                              disabled={product.stock <= 0}
-                            >
-                              {product.stock <= 0 ? 'Out of Stock' : 'View Details'}
-                            </Button>
-                          </a>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ProductCard key={product.id} product={product as any} />
                 ))}
               </div>
             ) : (

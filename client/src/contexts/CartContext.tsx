@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useDebouncedCallback } from '@/hooks/useDebounce';
 
 export interface CartItem {
   productId: number;
@@ -35,10 +36,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Save cart to abandoned carts database
   const saveAbandonedCart = trpc.abandonedCart.save.useMutation();
 
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-    
-    // Save to abandoned carts if cart has items
+  // Debounced function to save abandoned cart
+  const saveCartToDb = useDebouncedCallback(() => {
     if (items.length > 0) {
       const sessionId = localStorage.getItem('sessionId') || generateSessionId();
       const cartTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -58,7 +57,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         customerName: undefined,
       });
     }
-  }, [items]);
+  }, 500); // Debounce by 500ms
+
+  useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(items));
+    saveCartToDb();
+  }, [items, saveCartToDb]);
 
   // Generate unique session ID
   const generateSessionId = () => {
@@ -108,18 +112,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  const contextValue = useMemo(() => ({
+    items,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    totalItems,
+    subtotal,
+  }), [items, addItem, removeItem, updateQuantity, clearCart, totalItems, subtotal]);
+
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem,
-        removeItem,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        subtotal,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );

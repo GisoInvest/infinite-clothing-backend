@@ -179,6 +179,7 @@
 
   /* Futuristic glow effects */
   .glow-text {
+    will-change: text-shadow;
     text-shadow: 0 0 10px rgba(0, 229, 255, 0.8),
                  0 0 20px rgba(0, 229, 255, 0.6),
                  0 0 30px rgba(0, 229, 255, 0.4);
@@ -192,6 +193,7 @@
   }
 
   .glow-box {
+    will-change: box-shadow, transform;
     box-shadow: 0 0 10px rgba(0, 229, 255, 0.3),
                 0 0 20px rgba(0, 229, 255, 0.2),
                 0 0 30px rgba(0, 229, 255, 0.1);
@@ -206,6 +208,7 @@
   }
 
   .glow-border {
+    will-change: box-shadow, border-color, transform;
     border: 1px solid rgba(0, 229, 255, 0.5);
     box-shadow: 0 0 10px rgba(0, 229, 255, 0.3),
                 inset 0 0 10px rgba(0, 229, 255, 0.1);
@@ -345,6 +348,7 @@
 
   /* Enhanced interactive card effects */
   .interactive-card {
+    will-change: transform, box-shadow;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
