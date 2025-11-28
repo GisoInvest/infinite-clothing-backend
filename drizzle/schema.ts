@@ -44,6 +44,8 @@ export const products = mysqlTable("products", {
   colors: json("colors").$type<string[]>().notNull(), // Available colors
   sizes: json("sizes").$type<string[]>().notNull(), // Available sizes (S, M, L, XL, 2XL)
   sizeGuide: json("sizeGuide").$type<Record<string, string>>().default({}).notNull(), // Size guide data (e.g., { S: "Chest: 34-36", M: "Chest: 38-40" })
+
+
   discount: int("discount").default(0).notNull(), // Discount percentage (0-100)
   featured: boolean("featured").default(false).notNull(),
   active: boolean("active").default(true).notNull(),

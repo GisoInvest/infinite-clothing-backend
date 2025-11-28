@@ -72,6 +72,14 @@ export const appRouter = router({
         return product.sizeGuide;
       }),
 
+
+
+
+
+
+
+
+
     // Admin endpoints
     getAllAdmin: adminProcedure
       .input(z.object({
@@ -94,6 +102,7 @@ export const appRouter = router({
         videos: z.array(z.string()).default([]),
         colors: z.array(z.string()).default([]),
         sizes: z.array(z.string()).default([]),
+        sizeGuide: z.record(z.string(), z.string()).default({}),
         discount: z.number().int().min(0).max(100).default(0),
         featured: z.boolean().default(false),
         active: z.boolean().default(true),
@@ -115,9 +124,13 @@ export const appRouter = router({
         videos: z.array(z.string()).optional(),
         colors: z.array(z.string()).optional(),
         sizes: z.array(z.string()).optional(),
+        sizeGuide: z.record(z.string(), z.string()).optional(),
+
+
         discount: z.number().int().min(0).max(100).optional(),
         featured: z.boolean().optional(),
         active: z.boolean().optional(),
+
       }))
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
@@ -462,6 +475,7 @@ export const appRouter = router({
         name: z.string().optional(),
         url: z.string().optional(),
         active: z.boolean().optional(),
+
         order: z.number().int().optional(),
       }))
       .mutation(async ({ input }) => {
