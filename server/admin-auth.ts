@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from './_core/cookies';
 
 const router = Router();
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Cocomelone22*';
+const ADMIN_PASSWORD = 'Cocomelone22*';
 const ADMIN_SESSION_TOKEN = 'admin_session_active';
 
 // Admin login
