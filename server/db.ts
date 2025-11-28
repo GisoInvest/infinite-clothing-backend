@@ -91,10 +91,17 @@ export async function getUser(openId: string) {
 
 // Product operations
 export async function createProduct(product: InsertProduct): Promise<Product> {
+  console.log("CREATE_PRODUCT_DATA:", JSON.stringify(product));
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(products).values(product);
+    let result;
+  try {
+    result = await db.insert(products).values(product);
+  } catch (error) {
+    console.error("CREATE_PRODUCT_ERROR:", error);
+    throw error;
+  }
   const insertedId = Number(result[0].insertId);
   
   const newProduct = await db.select().from(products).where(eq(products.id, insertedId)).limit(1);
