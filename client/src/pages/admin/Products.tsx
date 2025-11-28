@@ -114,7 +114,7 @@ export default function AdminProducts() {
         name: formData.name,
         description: formData.description,
         price: Math.round(Number(formData.price) * 100), // Convert to cents using Number() for better precision
-        stock: parseInt(formData.stock),
+        stock: Number(formData.stock),
         category: formData.category as any,
         subcategory: formData.subcategory,
         images: imageUrls,
