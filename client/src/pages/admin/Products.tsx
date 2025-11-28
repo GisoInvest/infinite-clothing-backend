@@ -113,7 +113,7 @@ export default function AdminProducts() {
       const productData = {
         name: formData.name,
         description: formData.description,
-        price: Math.round(parseFloat(formData.price) * 100), // Convert to cents
+        price: Math.round(Number(formData.price) * 100), // Convert to cents using Number() for better precision
         stock: parseInt(formData.stock),
         category: formData.category as any,
         subcategory: formData.subcategory,
