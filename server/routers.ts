@@ -102,7 +102,14 @@ export const appRouter = router({
         videos: z.array(z.string()).default([]),
         colors: z.array(z.string()).default([]),
         sizes: z.array(z.string()).default([]),
-        sizeGuide: z.record(z.string(), z.string()).default({}),
+        sizeGuide: z.string().optional().transform((val) => {
+          if (!val) return {};
+          try {
+            return JSON.parse(val);
+          } catch (e) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid JSON format for Size Guide' });
+          }
+        }),
         discount: z.number().int().min(0).max(100).default(0),
         featured: z.boolean().default(false),
         active: z.boolean().default(true),
@@ -124,7 +131,14 @@ export const appRouter = router({
         videos: z.array(z.string()).optional(),
         colors: z.array(z.string()).optional(),
         sizes: z.array(z.string()).optional(),
-        sizeGuide: z.record(z.string(), z.string()).optional(),
+        sizeGuide: z.string().optional().transform((val) => {
+          if (!val) return undefined;
+          try {
+            return JSON.parse(val);
+          } catch (e) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid JSON format for Size Guide' });
+          }
+        }),
 
 
         discount: z.number().int().min(0).max(100).optional(),
