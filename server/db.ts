@@ -134,6 +134,7 @@ export async function getProduct(id: number): Promise<Product | undefined> {
     sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes,
     images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
     videos: typeof product.videos === 'string' ? JSON.parse(product.videos) : product.videos,
+    sizeGuide: typeof product.sizeGuide === 'string' ? JSON.parse(product.sizeGuide) : product.sizeGuide,
   };
 }
 
@@ -171,6 +172,7 @@ export async function getAllProducts(filters?: {
     sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes,
     images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
     videos: typeof product.videos === 'string' ? JSON.parse(product.videos) : product.videos,
+    sizeGuide: typeof product.sizeGuide === 'string' ? JSON.parse(product.sizeGuide) : product.sizeGuide,
   }));
 }
 
@@ -190,6 +192,7 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes,
     images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
     videos: typeof product.videos === 'string' ? JSON.parse(product.videos) : product.videos,
+    sizeGuide: typeof product.sizeGuide === 'string' ? JSON.parse(product.sizeGuide) : product.sizeGuide,
   }));
 }
 
