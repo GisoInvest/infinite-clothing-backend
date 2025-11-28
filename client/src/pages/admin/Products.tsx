@@ -123,6 +123,7 @@ export default function AdminProducts() {
         sizes: formData.sizes,
         discount: parseInt(formData.discount) || 0,
         colors: formData.colors,
+        active: true,
 
       };
 
