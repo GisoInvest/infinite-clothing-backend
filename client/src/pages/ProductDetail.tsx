@@ -9,7 +9,7 @@ import Footer from '@/components/Footer';
 import { trpc } from '@/lib/trpc';
 import { useCart } from '@/contexts/CartContext';
 import { Loader2, ShoppingBag, ChevronLeft } from 'lucide-react';
-import SizeGuide from '@/components/SizeGuide';
+
 import { toast } from 'sonner';
 import PriceDisplay from '@/components/PriceDisplay';
 import SEO from '@/components/SEO';
@@ -213,7 +213,7 @@ export default function ProductDetail() {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <Label className="text-base">Select Size *</Label>
-                      <SizeGuide productId={product.id} />
+
                     </div>
                     <RadioGroup value={selectedSize} onValueChange={setSelectedSize}>
                       <div className="grid grid-cols-5 gap-2">
