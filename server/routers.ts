@@ -62,15 +62,7 @@ export const appRouter = router({
         return product;
       }),
 
-    getSizeGuide: publicProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        const product = await db.getProductById(input.id);
-        if (!product) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' });
-        }
-        return product.sizeGuide;
-      }),
+
 
 
 
@@ -102,14 +94,7 @@ export const appRouter = router({
         videos: z.array(z.string()).default([]),
         colors: z.array(z.string()).default([]),
         sizes: z.array(z.string()).default([]),
-        sizeGuide: z.string().optional().transform((val) => {
-          if (!val) return {};
-          try {
-            return JSON.parse(val);
-          } catch (e) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid JSON format for Size Guide' });
-          }
-        }),
+        sizeGuide: z.record(z.string(), z.string()).default({}),
         discount: z.number().int().min(0).max(100).default(0),
         featured: z.boolean().default(false),
         active: z.boolean().default(true),
@@ -131,14 +116,7 @@ export const appRouter = router({
         videos: z.array(z.string()).optional(),
         colors: z.array(z.string()).optional(),
         sizes: z.array(z.string()).optional(),
-        sizeGuide: z.string().optional().transform((val) => {
-          if (!val) return undefined;
-          try {
-            return JSON.parse(val);
-          } catch (e) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Invalid JSON format for Size Guide' });
-          }
-        }),
+        sizeGuide: z.record(z.string(), z.string()).optional(),
 
 
         discount: z.number().int().min(0).max(100).optional(),
