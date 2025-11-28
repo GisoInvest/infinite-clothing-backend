@@ -39,7 +39,7 @@ export default function AdminProducts() {
     sizes: [] as string[],
     discount: '0',
       colors: [] as string[],
-      sizeGuide: '',
+
   });
   const [colorInput, setColorInput] = useState('');
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -123,7 +123,7 @@ export default function AdminProducts() {
         sizes: formData.sizes,
         discount: parseInt(formData.discount) || 0,
         colors: formData.colors,
-      sizeGuide: formData.sizeGuide ? JSON.parse(formData.sizeGuide) : {},
+
       };
 
       if (editingProduct) {
@@ -160,7 +160,7 @@ export default function AdminProducts() {
       sizes: product.sizes || [],
       discount: product.discount?.toString() || '0',
       colors: product.colors || [],
-      sizeGuide: JSON.stringify(product.sizeGuide, null, 2) || '',
+
     });
     setIsDialogOpen(true);
   };
@@ -193,7 +193,7 @@ export default function AdminProducts() {
       sizes: [],
       discount: '0',
       colors: [],
-      sizeGuide: '',
+
     });
     setSelectedImages([]);
     setColorInput('');
@@ -361,16 +361,7 @@ export default function AdminProducts() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="sizeGuide">Size Guide (JSON)</Label>
-                  <Textarea
-                    id="sizeGuide"
-                    value={formData.sizeGuide}
-                    onChange={(e) => setFormData({ ...formData, sizeGuide: e.target.value })}
-                    rows={6}
-                    placeholder='e.g., {"S": "Chest: 34-36, Waist: 28-30", "M": "Chest: 38-40, Waist: 32-34"}'
-                  />
-                </div>
+
 
                 <div>
                   <Label htmlFor="videos">Video URLs (comma-separated)</Label>
