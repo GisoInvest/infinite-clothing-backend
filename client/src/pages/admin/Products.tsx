@@ -385,11 +385,10 @@ export default function AdminProducts() {
                           id={`size-${size}`}
                           checked={formData.sizes.includes(size)}
                           onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, sizes: [...formData.sizes, size] });
-                            } else {
-                              setFormData({ ...formData, sizes: formData.sizes.filter(s => s !== size) });
-                            }
+                            const newSizes = e.target.checked
+                              ? [...formData.sizes, size]
+                              : formData.sizes.filter(s => s !== size);
+                            setFormData({ ...formData, sizes: newSizes });
                           }}
                           className="rounded"
                         />
