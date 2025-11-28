@@ -126,7 +126,7 @@ export async function deleteProduct(id: number): Promise<boolean> {
   return result[0].affectedRows > 0;
 }
 
-export async function getProduct(id: number): Promise<Product | undefined> {
+export async function getProductById(id: number): Promise<Product | undefined> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
