@@ -3,9 +3,7 @@ import Stripe from 'stripe';
 let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2024-10-28.acacia',
-  });
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 } else {
   console.warn('STRIPE_SECRET_KEY is not set - payment functionality will be disabled');
 }
