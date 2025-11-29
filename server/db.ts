@@ -208,7 +208,13 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(orders).values(order);
+  // Ensure statusHistory is properly serialized as JSON
+  const orderData = {
+    ...order,
+    statusHistory: order.statusHistory ? JSON.stringify(order.statusHistory) : null,
+  };
+
+  const result = await db.insert(orders).values(orderData as any);
   const insertedId = Number(result[0].insertId);
   
   const newOrder = await db.select().from(orders).where(eq(orders.id, insertedId)).limit(1);
