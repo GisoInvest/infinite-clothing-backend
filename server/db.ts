@@ -215,7 +215,9 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
     items: order.items ? JSON.stringify(order.items) : null,
     statusHistory: order.statusHistory ? JSON.stringify(order.statusHistory) : null,
     cancellationDeadline: order.cancellationDeadline 
-      ? new Date(order.cancellationDeadline).toISOString().slice(0, 19).replace('T', ' ')
+      ? (typeof order.cancellationDeadline === 'string' 
+          ? order.cancellationDeadline 
+          : new Date(order.cancellationDeadline).toISOString().slice(0, 19).replace('T', ' '))
       : null,
   };
 
