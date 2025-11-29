@@ -222,6 +222,8 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const order = await db.createOrder({
           ...input,
+          canBeCancelled: false, // Set to false to disable cancellation feature for now
+          cancellationDeadline: null, // No deadline since cancellation is disabled
           statusHistory: [{
             status: 'pending',
             timestamp: new Date().toISOString(),
