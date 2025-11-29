@@ -105,7 +105,7 @@ export const orders = mysqlTable("orders", {
     timestamp: string;
     updatedBy?: string;
     notes?: string;
-  }>>().default([]),
+  }>>(),
   canBeCancelled: boolean("canBeCancelled").default(true).notNull(), // Auto-set to false after 24hrs
   cancellationDeadline: timestamp("cancellationDeadline"), // 24 hours from order creation
   notes: text("notes"),
