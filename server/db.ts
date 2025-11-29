@@ -208,17 +208,12 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Ensure all JSON fields are properly serialized and dates are formatted correctly for MySQL
+  // Ensure all JSON fields are properly serialized
   const orderData = {
     ...order,
     shippingAddress: order.shippingAddress ? JSON.stringify(order.shippingAddress) : null,
     items: order.items ? JSON.stringify(order.items) : null,
     statusHistory: order.statusHistory ? JSON.stringify(order.statusHistory) : null,
-    cancellationDeadline: order.cancellationDeadline 
-      ? (typeof order.cancellationDeadline === 'string' 
-          ? order.cancellationDeadline 
-          : new Date(order.cancellationDeadline).toISOString().slice(0, 19).replace('T', ' '))
-      : null,
   };
 
   const result = await db.insert(orders).values(orderData as any);

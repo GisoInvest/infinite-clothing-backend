@@ -220,16 +220,8 @@ export const appRouter = router({
         paymentIntentId: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Set cancellation deadline to 24 hours from now
-        const cancellationDeadline = new Date();
-        cancellationDeadline.setHours(cancellationDeadline.getHours() + 24);
-        // Convert to MySQL datetime format string
-        const cancellationDeadlineStr = cancellationDeadline.toISOString().slice(0, 19).replace('T', ' ');
-        
         const order = await db.createOrder({
           ...input,
-          cancellationDeadline: cancellationDeadlineStr,
-          canBeCancelled: true,
           statusHistory: [{
             status: 'pending',
             timestamp: new Date().toISOString(),
