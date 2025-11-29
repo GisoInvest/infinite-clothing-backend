@@ -91,7 +91,7 @@ export async function getUser(openId: string) {
 
 // Product operations
 export async function createProduct(product: InsertProduct): Promise<Product> {
-  console.log("CREATE_PRODUCT_DATA:", JSON.stringify(product));
+  
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
