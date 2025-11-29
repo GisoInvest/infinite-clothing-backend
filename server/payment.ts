@@ -4,7 +4,7 @@ let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-09-30.clover',
+    apiVersion: '2024-10-28.acacia',
   });
 } else {
   console.warn('STRIPE_SECRET_KEY is not set - payment functionality will be disabled');
