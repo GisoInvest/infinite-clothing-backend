@@ -208,10 +208,13 @@ export async function createOrder(order: InsertOrder): Promise<Order> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Ensure statusHistory is properly serialized as JSON
+  // Ensure statusHistory is properly serialized as JSON and dates are formatted correctly
   const orderData = {
     ...order,
     statusHistory: order.statusHistory ? JSON.stringify(order.statusHistory) : null,
+    cancellationDeadline: order.cancellationDeadline 
+      ? new Date(order.cancellationDeadline).toISOString().slice(0, 19).replace('T', ' ')
+      : null,
   };
 
   const result = await db.insert(orders).values(orderData as any);
