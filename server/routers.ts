@@ -662,20 +662,20 @@ export const appRouter = router({
         return await db.getProductAverageRating(input.productId);
       }),
 
-    create: protectedProcedure
+    create: publicProcedure
       .input(z.object({
         productId: z.number(),
         rating: z.number().min(1).max(5),
         title: z.string().optional(),
         comment: z.string(),
+        userName: z.string(),
+        userEmail: z.string().email(),
       }))
-      .mutation(async ({ ctx, input }) => {
+      .mutation(async ({ input }) => {
         const review = await db.createProductReview({
           ...input,
-          userId: ctx.user.id,
-          userName: ctx.user.name || 'Anonymous',
-          userEmail: ctx.user.email || undefined,
-          verifiedPurchase: false, // TODO: Check if user actually purchased this product
+          userId: undefined,
+          verifiedPurchase: false,
           status: 'approved',
         });
         return review;
