@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
-import { db } from "../../drizzle/db";
+import { getDb } from "../db";
 import { orders } from "../../drizzle/schema";
 import { sendOrderConfirmationEmail, sendAdminOrderNotification } from "../email";
 
@@ -25,6 +25,11 @@ export const simpleOrdersRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
+        const db = await getDb();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+
         // Insert order with only essential fields
         // Let database handle all defaults
         const [order] = await db.insert(orders).values({
