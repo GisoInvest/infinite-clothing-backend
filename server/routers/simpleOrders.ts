@@ -61,7 +61,7 @@ export const simpleOrdersRouter = router({
               input.total,
               input.paymentIntentId || '',
               'pending',
-              'paid'
+              'succeeded'
             ]
           );
 
