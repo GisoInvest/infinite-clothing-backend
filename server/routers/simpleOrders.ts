@@ -46,10 +46,8 @@ export const simpleOrdersRouter = router({
               total,
               paymentIntentId,
               status,
-              paymentStatus,
-              statusHistory,
-              canBeCancelled
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              paymentStatus
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               input.orderNumber,
               input.customerEmail,
@@ -63,9 +61,7 @@ export const simpleOrdersRouter = router({
               input.total,
               input.paymentIntentId || '',
               'pending',
-              'succeeded',
-              JSON.stringify([{ status: 'pending', timestamp: new Date().toISOString(), notes: 'Order created' }]),
-              false
+              'succeeded'
             ]
           );
 
