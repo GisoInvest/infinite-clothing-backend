@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
 import { sendOrderConfirmationEmail, sendAdminOrderNotification } from "../email";
-import { sql } from "drizzle-orm";
+import mysql from "mysql2/promise";
 
 /**
- * Simplified order router using raw SQL for guaranteed insertion
+ * Simplified order router using direct MySQL connection
  */
 export const simpleOrdersRouter = router({
   create: publicProcedure
@@ -24,85 +23,93 @@ export const simpleOrdersRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
-        const db = await getDb();
-        if (!db) {
-          throw new Error('Database not available');
+        if (!process.env.DATABASE_URL) {
+          throw new Error('DATABASE_URL not configured');
         }
 
-        // Use raw SQL to insert order - this guarantees it works
-        const result = await db.execute(sql`
-          INSERT INTO orders (
-            orderNumber,
-            customerEmail,
-            customerName,
-            customerPhone,
-            shippingAddress,
-            items,
-            subtotal,
-            shipping,
-            tax,
-            total,
-            paymentIntentId,
-            status,
-            paymentStatus
-          ) VALUES (
-            ${input.orderNumber},
-            ${input.customerEmail},
-            ${input.customerName},
-            ${input.customerPhone || ''},
-            ${input.shippingAddress},
-            ${input.items},
-            ${input.subtotal},
-            ${input.shipping},
-            ${input.tax},
-            ${input.total},
-            ${input.paymentIntentId || ''},
-            'pending',
-            'paid'
-          )
-        `);
+        // Create direct MySQL connection
+        const connection = await mysql.createConnection(process.env.DATABASE_URL);
 
-        console.log('Order inserted successfully:', result);
-
-        // Parse items for email
-        const parsedItems = JSON.parse(input.items);
-        const parsedAddress = JSON.parse(input.shippingAddress);
-
-        // Send confirmation emails (don't fail order if emails fail)
         try {
-          await sendOrderConfirmationEmail({
-            orderNumber: input.orderNumber,
-            customerName: input.customerName,
-            customerEmail: input.customerEmail,
-            items: parsedItems,
-            subtotal: input.subtotal,
-            shipping: input.shipping,
-            tax: input.tax,
-            total: input.total,
-            shippingAddress: parsedAddress,
-          });
+          // Insert order using direct MySQL query with proper parameter binding
+          const [result] = await connection.execute(
+            `INSERT INTO orders (
+              orderNumber,
+              customerEmail,
+              customerName,
+              customerPhone,
+              shippingAddress,
+              items,
+              subtotal,
+              shipping,
+              tax,
+              total,
+              paymentIntentId,
+              status,
+              paymentStatus
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              input.orderNumber,
+              input.customerEmail,
+              input.customerName,
+              input.customerPhone || '',
+              input.shippingAddress,
+              input.items,
+              input.subtotal,
+              input.shipping,
+              input.tax,
+              input.total,
+              input.paymentIntentId || '',
+              'pending',
+              'paid'
+            ]
+          );
 
-          await sendAdminOrderNotification({
+          console.log('Order inserted successfully:', result);
+
+          // Parse items for email
+          const parsedItems = JSON.parse(input.items);
+          const parsedAddress = JSON.parse(input.shippingAddress);
+
+          // Send confirmation emails (don't fail order if emails fail)
+          try {
+            await sendOrderConfirmationEmail({
+              orderNumber: input.orderNumber,
+              customerName: input.customerName,
+              customerEmail: input.customerEmail,
+              items: parsedItems,
+              subtotal: input.subtotal,
+              shipping: input.shipping,
+              tax: input.tax,
+              total: input.total,
+              shippingAddress: parsedAddress,
+            });
+
+            await sendAdminOrderNotification({
+              orderNumber: input.orderNumber,
+              customerName: input.customerName,
+              customerEmail: input.customerEmail,
+              items: parsedItems,
+              subtotal: input.subtotal,
+              shipping: input.shipping,
+              tax: input.tax,
+              total: input.total,
+              shippingAddress: parsedAddress,
+            });
+          } catch (emailError) {
+            console.error('Failed to send order emails:', emailError);
+            // Don't fail the order creation if emails fail
+          }
+
+          return {
+            success: true,
             orderNumber: input.orderNumber,
-            customerName: input.customerName,
-            customerEmail: input.customerEmail,
-            items: parsedItems,
-            subtotal: input.subtotal,
-            shipping: input.shipping,
-            tax: input.tax,
-            total: input.total,
-            shippingAddress: parsedAddress,
-          });
-        } catch (emailError) {
-          console.error('Failed to send order emails:', emailError);
-          // Don't fail the order creation if emails fail
+            message: 'Order created successfully'
+          };
+        } finally {
+          // Always close the connection
+          await connection.end();
         }
-
-        return {
-          success: true,
-          orderNumber: input.orderNumber,
-          message: 'Order created successfully'
-        };
       } catch (error) {
         console.error('Order creation error:', error);
         throw new Error(`Failed to create order: ${error instanceof Error ? error.message : 'Unknown error'}`);
