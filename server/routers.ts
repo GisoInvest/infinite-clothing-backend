@@ -216,9 +216,15 @@ export const appRouter = router({
         paymentIntentId: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        // Set cancellationDeadline to far future date when cancellation is disabled
+        const farFutureDate = new Date();
+        farFutureDate.setFullYear(farFutureDate.getFullYear() + 100);
+        const cancellationDeadlineStr = farFutureDate.toISOString().slice(0, 19).replace('T', ' ');
+
         const order = await db.createOrder({
           ...input,
           canBeCancelled: false, // Set to false to disable cancellation feature for now
+          cancellationDeadline: cancellationDeadlineStr, // Far future date to satisfy database
           statusHistory: [{
             status: 'pending',
             timestamp: new Date().toISOString(),
