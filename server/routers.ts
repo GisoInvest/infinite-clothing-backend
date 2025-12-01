@@ -8,6 +8,7 @@ import * as db from "./db";
 import { createPaymentIntent, confirmPaymentIntent } from "./payment";
 import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusEmail, sendOrderCancellationEmail } from "./email";
 import { assistantRouter } from "./routers/assistant";
+import { simpleOrdersRouter } from "./routers/simpleOrders";
 
 // Admin-only procedure (simple cookie-based auth)
 const adminProcedure = publicProcedure.use(({ ctx, next }) => {
@@ -21,6 +22,7 @@ const adminProcedure = publicProcedure.use(({ ctx, next }) => {
 export const appRouter = router({
   system: systemRouter,
   assistant: assistantRouter,
+  simpleOrders: simpleOrdersRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
