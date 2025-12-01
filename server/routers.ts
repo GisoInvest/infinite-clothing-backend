@@ -6,6 +6,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { createPaymentIntent, confirmPaymentIntent } from "./payment";
+import { createCheckoutSession } from "./checkout";
 import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusEmail, sendOrderCancellationEmail } from "./email";
 import { assistantRouter } from "./routers/assistant";
 import { simpleOrdersRouter } from "./routers/simpleOrders";
@@ -186,6 +187,45 @@ export const appRouter = router({
       .input(z.object({ paymentIntentId: z.string() }))
       .query(async ({ input }) => {
         return await confirmPaymentIntent(input.paymentIntentId);
+      }),
+
+    createCheckoutSession: publicProcedure
+      .input(z.object({
+        orderNumber: z.string(),
+        customerEmail: z.string().email(),
+        customerName: z.string(),
+        customerPhone: z.string().optional(),
+        shippingAddress: z.string(),
+        items: z.string(),
+        subtotal: z.number().int(),
+        shipping: z.number().int(),
+        tax: z.number().int(),
+        total: z.number().int(),
+      }))
+      .mutation(async ({ input }) => {
+        const parsedItems = JSON.parse(input.items);
+        
+        const { sessionId, url } = await createCheckoutSession({
+          orderNumber: input.orderNumber,
+          customerEmail: input.customerEmail,
+          customerName: input.customerName,
+          items: parsedItems,
+          total: input.total,
+          metadata: {
+            orderNumber: input.orderNumber,
+            customerEmail: input.customerEmail,
+            customerName: input.customerName,
+            customerPhone: input.customerPhone || '',
+            shippingAddress: input.shippingAddress,
+            items: input.items,
+            subtotal: input.subtotal.toString(),
+            shipping: input.shipping.toString(),
+            tax: input.tax.toString(),
+            total: input.total.toString(),
+          },
+        });
+        
+        return { sessionId, url };
       }),
   }),
 
