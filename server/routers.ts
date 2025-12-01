@@ -11,6 +11,7 @@ import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatus
 import { assistantRouter } from "./routers/assistant";
 import { simpleOrdersRouter } from "./routers/simpleOrders";
 import { stripeSessionRouter } from "./routers/stripeSession";
+import { debugOrdersRouter } from "./routers/debugOrders";
 
 // Admin-only procedure (simple cookie-based auth)
 const adminProcedure = publicProcedure.use(({ ctx, next }) => {
@@ -26,6 +27,7 @@ export const appRouter = router({
   assistant: assistantRouter,
   simpleOrders: simpleOrdersRouter,
   stripeSession: stripeSessionRouter,
+  debugOrders: debugOrdersRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
