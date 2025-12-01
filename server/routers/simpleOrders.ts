@@ -31,6 +31,13 @@ export const simpleOrdersRouter = router({
         const connection = await mysql.createConnection(process.env.DATABASE_URL);
 
         try {
+          // Create initial status history
+          const statusHistory = JSON.stringify([{
+            status: 'pending',
+            timestamp: new Date().toISOString(),
+            notes: 'Order created'
+          }]);
+
           // Insert order using direct MySQL query with proper parameter binding
           const [result] = await connection.execute(
             `INSERT INTO orders (
@@ -46,8 +53,10 @@ export const simpleOrdersRouter = router({
               total,
               paymentIntentId,
               status,
-              paymentStatus
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              paymentStatus,
+              statusHistory,
+              canBeCancelled
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               input.orderNumber,
               input.customerEmail,
@@ -61,7 +70,9 @@ export const simpleOrdersRouter = router({
               input.total,
               input.paymentIntentId || '',
               'pending',
-              'succeeded'
+              'succeeded',
+              statusHistory,
+              true
             ]
           );
 
