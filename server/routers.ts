@@ -212,6 +212,7 @@ export const appRouter = router({
           customerEmail: input.customerEmail,
           customerName: input.customerName,
           items: parsedItems,
+          shipping: input.shipping,
           total: input.total,
           metadata: {
             orderNumber: input.orderNumber,

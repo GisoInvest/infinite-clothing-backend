@@ -9,6 +9,7 @@ export interface CreateCheckoutSessionParams {
     quantity: number;
     price: number; // in cents
   }>;
+  shipping: number; // in cents
   total: number; // in cents
   metadata: {
     orderNumber: string;
@@ -29,9 +30,9 @@ export async function createCheckoutSession(params: CreateCheckoutSessionParams)
     throw new Error('Stripe is not configured');
   }
 
-  const { orderNumber, customerEmail, items, total, metadata } = params;
+  const { orderNumber, customerEmail, items, shipping, total, metadata } = params;
 
-  // Create line items for Stripe
+  // Create line items for Stripe (products)
   const lineItems = items.map(item => ({
     price_data: {
       currency: 'gbp',
@@ -42,6 +43,20 @@ export async function createCheckoutSession(params: CreateCheckoutSessionParams)
     },
     quantity: item.quantity,
   }));
+
+  // Add shipping as a line item if shipping cost exists
+  if (shipping > 0) {
+    lineItems.push({
+      price_data: {
+        currency: 'gbp',
+        product_data: {
+          name: 'Shipping',
+        },
+        unit_amount: shipping,
+      },
+      quantity: 1,
+    });
+  }
 
   // Create checkout session
   const session = await stripe.checkout.sessions.create({
