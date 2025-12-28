@@ -94,6 +94,10 @@ export const orders = mysqlTable("orders", {
   ]).default("pending").notNull(),
   paymentIntentId: varchar("paymentIntentId", { length: 255 }),
   paymentStatus: mysqlEnum("paymentStatus", ["pending", "succeeded", "failed"]).default("pending").notNull(),
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "crypto"]).default("stripe").notNull(), // Payment method used
+  cryptoPaymentId: varchar("cryptoPaymentId", { length: 255 }), // NOWPayments payment ID
+  cryptoCurrency: varchar("cryptoCurrency", { length: 50 }), // e.g., BTC, ETH, USDT
+  cryptoAmount: varchar("cryptoAmount", { length: 100 }), // Amount in crypto
   shippingLabelUrl: text("shippingLabelUrl"),
   trackingNumber: varchar("trackingNumber", { length: 255 }),
   shippingCarrier: varchar("shippingCarrier", { length: 100 }), // e.g., Royal Mail, DPD, Hermes

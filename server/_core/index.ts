@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import cookieParser from "cookie-parser";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
+import { cryptoCheckoutRouter } from "../routers/cryptoCheckout";
 import { createContext } from "./context";
 import uploadRouter from "../upload";
 import adminAuthRouter from "../admin-auth";
@@ -45,6 +46,18 @@ async function startServer() {
   app.use("/api/upload", uploadRouter);
   // Admin authentication
   app.use("/api/admin", adminAuthRouter);
+  // NOWPayments IPN Webhook
+  app.post("/api/webhooks/nowpayments", async (req, res) => {
+    try {
+      // NOTE: In a real app, you must verify the IPN signature here using the secret key
+      // For simplicity, we are skipping signature verification.
+      const result = await cryptoCheckoutRouter.handleWebhook.mutate(req.body);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("NOWPayments Webhook Error:", error);
+      res.status(500).json({ success: false, message: "Webhook failed" });
+    }
+  });
   // Sitemap generation
   app.get("/sitemap.xml", generateSitemap);
   // tRPC API

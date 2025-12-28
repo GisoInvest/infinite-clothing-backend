@@ -12,6 +12,7 @@ import { assistantRouter } from "./routers/assistant";
 import { simpleOrdersRouter } from "./routers/simpleOrders";
 import { stripeSessionRouter } from "./routers/stripeSession";
 import { debugOrdersRouter } from "./routers/debugOrders";
+import { cryptoCheckoutRouter } from "./routers/cryptoCheckout";
 
 // Admin-only procedure (simple cookie-based auth)
 const adminProcedure = publicProcedure.use(({ ctx, next }) => {
@@ -28,6 +29,7 @@ export const appRouter = router({
   simpleOrders: simpleOrdersRouter,
   stripeSession: stripeSessionRouter,
   debugOrders: debugOrdersRouter,
+  cryptoCheckout: cryptoCheckoutRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
