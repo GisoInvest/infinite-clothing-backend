@@ -16,6 +16,8 @@ export interface OrderEmailData {
     productName: string;
     quantity: number;
     price: number;
+    size?: string;
+    color?: string;
   }>;
   subtotal: number;
   shipping: number;
@@ -41,7 +43,11 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData) {
     .map(
       (item) => `
     <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #1A1F2E;">${item.productName}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #1A1F2E;">
+        <strong>${item.productName}</strong>
+        ${item.size ? `<br><span style="font-size: 12px; color: #999;">Size: ${item.size}</span>` : ''}
+        ${item.color ? `<br><span style="font-size: 12px; color: #999;">Color: ${item.color}</span>` : ''}
+      </td>
       <td style="padding: 10px; border-bottom: 1px solid #1A1F2E; text-align: center;">${item.quantity}</td>
       <td style="padding: 10px; border-bottom: 1px solid #1A1F2E; text-align: right;">£${(item.price / 100).toFixed(2)}</td>
       <td style="padding: 10px; border-bottom: 1px solid #1A1F2E; text-align: right;">£${((item.price * item.quantity) / 100).toFixed(2)}</td>
