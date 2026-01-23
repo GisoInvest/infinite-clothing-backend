@@ -682,9 +682,9 @@ export async function seedQRAmbassadorCodes(): Promise<void> {
       isActive: true,
     },
     {
-      code: 'QR_JOSEPHINE10',
+      code: 'QR_JOSEPHINE20',
       discountType: 'percentage' as const,
-      discountValue: '10',
+      discountValue: '20',
       minPurchaseAmount: '0',
       maxUses: 999999, // Essentially unlimited
       isActive: true,
