@@ -901,6 +901,13 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return await db.createDiscountCode(input);
       }),
+
+    // Seed QR ambassador discount codes
+    seedQRCodes: adminProcedure
+      .mutation(async () => {
+        await db.seedQRAmbassadorCodes();
+        return { success: true, message: 'QR ambassador codes seeded successfully' };
+      }),
   }),
 
   // ========== Abandoned Cart Recovery ==========

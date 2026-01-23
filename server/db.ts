@@ -661,6 +661,52 @@ export async function getAllDiscountCodes(): Promise<DiscountCode[]> {
   return db.select().from(discountCodes).orderBy(desc(discountCodes.createdAt));
 }
 
+/**
+ * Seed QR ambassador discount codes if they don't exist
+ * These are permanent discount codes for QR code campaigns
+ */
+export async function seedQRAmbassadorCodes(): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot seed QR codes: database not available");
+    return;
+  }
+  
+  const qrCodes = [
+    {
+      code: 'QR_AMBASSADOR15',
+      discountType: 'percentage' as const,
+      discountValue: '15',
+      minPurchaseAmount: '0',
+      maxUses: 999999, // Essentially unlimited
+      isActive: true,
+    },
+    {
+      code: 'QR_JOSEPHINE10',
+      discountType: 'percentage' as const,
+      discountValue: '10',
+      minPurchaseAmount: '0',
+      maxUses: 999999, // Essentially unlimited
+      isActive: true,
+    },
+  ];
+  
+  for (const qrCode of qrCodes) {
+    try {
+      // Check if code already exists
+      const existing = await getDiscountCodeByCode(qrCode.code);
+      if (!existing) {
+        await db.insert(discountCodes).values(qrCode);
+        console.log(`[Database] Created QR discount code: ${qrCode.code}`);
+      } else {
+        console.log(`[Database] QR discount code already exists: ${qrCode.code}`);
+      }
+    } catch (error) {
+      console.error(`[Database] Failed to create QR code ${qrCode.code}:`, error);
+    }
+  }
+}
+
 // ========== Abandoned Carts ==========
 
 export async function saveAbandonedCart(cart: InsertAbandonedCart): Promise<AbandonedCart> {

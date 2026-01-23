@@ -12,6 +12,7 @@ import uploadRouter from "../upload";
 import adminAuthRouter from "../admin-auth";
 import { generateSitemap } from "../sitemap";
 import { serveStatic, setupVite } from "./vite";
+import { seedQRAmbassadorCodes } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -82,8 +83,15 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
+  server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+    
+    // Seed QR ambassador discount codes on startup
+    try {
+      await seedQRAmbassadorCodes();
+    } catch (error) {
+      console.error("Failed to seed QR ambassador codes:", error);
+    }
   });
 }
 
