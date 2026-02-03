@@ -122,9 +122,13 @@ export const cryptoCheckoutRouter = router({
         } finally {
           await connection.end();
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Create crypto payment error:", error);
-        throw new Error("Failed to create crypto payment");
+        // Log more details if available
+        if (error.response) {
+          console.error("NOWPayments API response error:", error.response.data);
+        }
+        throw new Error(`Failed to create crypto payment: ${error.message || 'Unknown error'}`);
       }
     }),
 
