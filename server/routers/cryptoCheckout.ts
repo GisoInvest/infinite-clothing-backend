@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { createCryptoPayment, getPaymentStatus, getAvailableCurrencies } from "../nowpayments";
-import mysql from "mysql2/promise";
+import { getDb } from "../db";
+import { orders, discountCodes } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 import { sendOrderConfirmationEmail, sendAdminOrderNotification } from "../email";
 
 /**
@@ -53,75 +55,48 @@ export const cryptoCheckoutRouter = router({
         });
 
         // Create order in database with pending status
-        if (!process.env.DATABASE_URL) {
-          throw new Error('DATABASE_URL not configured');
+        const db = await getDb();
+        if (!db) {
+          throw new Error('Database not available');
         }
 
-        const connection = await mysql.createConnection(process.env.DATABASE_URL);
+        const statusHistory = [{
+          status: 'pending',
+          timestamp: new Date().toISOString(),
+          notes: 'Crypto payment initiated'
+        }];
 
-        try {
-          const statusHistory = JSON.stringify([{
-            status: 'pending',
-            timestamp: new Date().toISOString(),
-            notes: 'Crypto payment initiated'
-          }]);
+        await db.insert(orders).values({
+          orderNumber: input.orderNumber,
+          customerEmail: input.customerEmail,
+          customerName: input.customerName,
+          customerPhone: input.customerPhone || '',
+          shippingAddress: input.shippingAddress,
+          items: input.items,
+          subtotal: input.subtotal,
+          shipping: input.shipping,
+          tax: input.tax,
+          total: input.total,
+          status: 'pending',
+          paymentStatus: 'pending',
+          paymentMethod: 'crypto',
+          cryptoPaymentId: payment.payment_id,
+          cryptoCurrency: payment.pay_currency,
+          cryptoAmount: payment.pay_amount.toString(),
+          statusHistory: statusHistory,
+          canBeCancelled: true
+        });
 
-          await connection.execute(
-            `INSERT INTO orders (
-              orderNumber,
-              customerEmail,
-              customerName,
-              customerPhone,
-              shippingAddress,
-              items,
-              subtotal,
-              shipping,
-              tax,
-              total,
-              status,
-              paymentStatus,
-              paymentMethod,
-              cryptoPaymentId,
-              cryptoCurrency,
-              cryptoAmount,
-              statusHistory,
-              canBeCancelled
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              input.orderNumber,
-              input.customerEmail,
-              input.customerName,
-              input.customerPhone || '',
-              JSON.stringify(input.shippingAddress),
-              JSON.stringify(input.items),
-              input.subtotal,
-              input.shipping,
-              input.tax,
-              input.total,
-              'pending',
-              'pending',
-              'crypto',
-              payment.payment_id,
-              payment.pay_currency,
-              payment.pay_amount.toString(),
-              statusHistory,
-              true
-            ]
-          );
+        console.log('Crypto order created:', input.orderNumber);
 
-          console.log('Crypto order created:', input.orderNumber);
-
-          return {
-            success: true,
-            paymentId: payment.payment_id,
-            paymentUrl: payment.payment_url,
-            payAddress: payment.pay_address,
-            payAmount: payment.pay_amount,
-            payCurrency: payment.pay_currency,
-          };
-        } finally {
-          await connection.end();
-        }
+        return {
+          success: true,
+          paymentId: payment.payment_id,
+          paymentUrl: payment.payment_url,
+          payAddress: payment.pay_address,
+          payAmount: payment.pay_amount,
+          payCurrency: payment.pay_currency,
+        };
       } catch (error: any) {
         console.error("Create crypto payment error:", error);
         // Log more details if available
@@ -185,77 +160,68 @@ export const cryptoCheckoutRouter = router({
       try {
         console.log("NOWPayments webhook received:", input);
 
-        if (!process.env.DATABASE_URL) {
-          throw new Error('DATABASE_URL not configured');
+        const db = await getDb();
+        if (!db) {
+          throw new Error('Database not available');
         }
 
-        const connection = await mysql.createConnection(process.env.DATABASE_URL);
+        // Update order payment status based on webhook
+        let paymentStatus = 'pending';
+        let orderStatus = 'pending';
 
-        try {
-          // Update order payment status based on webhook
-          let paymentStatus = 'pending';
-          let orderStatus = 'pending';
+        if (input.payment_status === 'finished' || input.payment_status === 'confirmed') {
+          paymentStatus = 'succeeded';
+          orderStatus = 'processing';
 
-          if (input.payment_status === 'finished' || input.payment_status === 'confirmed') {
-            paymentStatus = 'succeeded';
-            orderStatus = 'processing';
+          // Send confirmation emails
+          const results = await db.select().from(orders).where(eq(orders.orderNumber, input.order_id)).limit(1);
 
-            // Send confirmation emails
-            const [rows] = await connection.execute(
-              'SELECT * FROM orders WHERE orderNumber = ?',
-              [input.order_id]
-            );
+          if (results.length > 0) {
+            const order = results[0];
+            
+            try {
+              await sendOrderConfirmationEmail({
+                orderNumber: order.orderNumber,
+                customerName: order.customerName,
+                customerEmail: order.customerEmail,
+                items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+                subtotal: order.subtotal,
+                shipping: order.shipping,
+                tax: order.tax,
+                total: order.total,
+                shippingAddress: typeof order.shippingAddress === 'string' ? JSON.parse(order.shippingAddress) : order.shippingAddress,
+              });
 
-            if (Array.isArray(rows) && rows.length > 0) {
-              const order = rows[0] as any;
-              
-              try {
-                await sendOrderConfirmationEmail({
-                  orderNumber: order.orderNumber,
-                  customerName: order.customerName,
-                  customerEmail: order.customerEmail,
-                  items: JSON.parse(order.items),
-                  subtotal: order.subtotal,
-                  shipping: order.shipping,
-                  tax: order.tax,
-                  total: order.total,
-                  shippingAddress: JSON.parse(order.shippingAddress),
-                });
-
-                await sendAdminOrderNotification({
-                  orderNumber: order.orderNumber,
-                  customerName: order.customerName,
-                  customerEmail: order.customerEmail,
-                  items: JSON.parse(order.items),
-                  total: order.total,
-                  shippingAddress: JSON.parse(order.shippingAddress),
-                });
-              } catch (emailError) {
-                console.error("Failed to send confirmation emails:", emailError);
-              }
+              await sendAdminOrderNotification({
+                orderNumber: order.orderNumber,
+                customerName: order.customerName,
+                customerEmail: order.customerEmail,
+                items: typeof order.items === 'string' ? JSON.parse(order.items) : order.items,
+                total: order.total,
+                shippingAddress: typeof order.shippingAddress === 'string' ? JSON.parse(order.shippingAddress) : order.shippingAddress,
+              });
+            } catch (emailError) {
+              console.error("Failed to send confirmation emails:", emailError);
             }
-          } else if (input.payment_status === 'failed' || input.payment_status === 'expired') {
-            paymentStatus = 'failed';
-            orderStatus = 'cancelled';
           }
-
-          // Update order status
-          await connection.execute(
-            `UPDATE orders 
-             SET paymentStatus = ?, 
-                 status = ?,
-                 cryptoAmount = ?,
-                 updatedAt = NOW()
-             WHERE orderNumber = ?`,
-            [paymentStatus, orderStatus, input.actually_paid?.toString() || input.pay_amount.toString(), input.order_id]
-          );
-
-          console.log(`Order ${input.order_id} updated: payment=${paymentStatus}, order=${orderStatus}`);
-
-          return { success: true };
-        } finally {
-          await connection.end();
+        } else if (input.payment_status === 'failed' || input.payment_status === 'expired') {
+          paymentStatus = 'failed';
+          orderStatus = 'cancelled';
         }
+
+        // Update order status
+        await db.update(orders)
+          .set({
+            paymentStatus: paymentStatus as any,
+            status: orderStatus as any,
+            cryptoAmount: input.actually_paid?.toString() || input.pay_amount.toString(),
+            updatedAt: new Date()
+          })
+          .where(eq(orders.orderNumber, input.order_id));
+
+        console.log(`Order ${input.order_id} updated: payment=${paymentStatus}, order=${orderStatus}`);
+
+        return { success: true };
       } catch (error) {
         console.error("Webhook handling error:", error);
         throw new Error("Failed to handle webhook");
