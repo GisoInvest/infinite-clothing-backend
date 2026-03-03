@@ -46,6 +46,7 @@ export const appRouter = router({
     // Public endpoints
     getAll: publicProcedure
       .input(z.object({
+        collection: z.string().optional(),
         category: z.string().optional(),
         subcategory: z.string().optional(),
       }).optional())
@@ -84,6 +85,7 @@ export const appRouter = router({
     // Admin endpoints
     getAllAdmin: adminProcedure
       .input(z.object({
+        collection: z.string().optional(),
         category: z.string().optional(),
         subcategory: z.string().optional(),
       }).optional())
@@ -96,6 +98,7 @@ export const appRouter = router({
         name: z.string(),
         description: z.string().optional(),
         price: z.number().int().positive(),
+        collection: z.enum(["regular", "premium"]).default("regular"),
         category: z.enum(["men", "women", "unisex", "kids-baby"]),
         subcategory: z.string(),
         stock: z.number().default(0),
@@ -117,6 +120,7 @@ export const appRouter = router({
         name: z.string().optional(),
         description: z.string().optional(),
         price: z.number().int().positive().optional(),
+        collection: z.enum(["regular", "premium"]).optional(),
         category: z.enum(["men", "women", "unisex", "kids-baby"]).optional(),
         subcategory: z.string().optional(),
         stock: z.number().optional(),

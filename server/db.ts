@@ -146,6 +146,7 @@ export async function getProductById(id: number): Promise<Product | undefined> {
 }
 
 export async function getAllProducts(filters?: {
+  collection?: string;
   category?: string;
   subcategory?: string;
   active?: boolean;
@@ -156,6 +157,9 @@ export async function getAllProducts(filters?: {
   let query = db.select().from(products);
   
   const conditions = [];
+  if (filters?.collection) {
+    conditions.push(eq(products.collection, filters.collection as any));
+  }
   if (filters?.category) {
     conditions.push(eq(products.category, filters.category as any));
   }
