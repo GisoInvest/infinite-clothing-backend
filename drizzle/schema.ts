@@ -40,10 +40,10 @@ export const products = mysqlTable("products", {
   category: mysqlEnum("category", ["men", "women", "unisex", "kids-baby"]).notNull(),
   subcategory: varchar("subcategory", { length: 100 }), // e.g., "t-shirt", "hoodies", etc.
   stock: int("stock").default(0).notNull(),
-  images: json("images").$type<string[]>().notNull(), // Array of image URLs
-  videos: json("videos").$type<string[]>().notNull(), // Array of video URLs
-  colors: json("colors").$type<string[]>().notNull(), // Available colors
-  sizes: json("sizes").$type<string[]>().notNull(), // Available sizes (S, M, L, XL, 2XL)
+  images: json("images").$type<string[]>().default([]), // Array of image URLs
+  videos: json("videos").$type<string[]>().default([]), // Array of video URLs
+  colors: json("colors").$type<string[]>().default([]), // Available colors
+  sizes: json("sizes").$type<string[]>().default([]), // Available sizes (S, M, L, XL, 2XL)
 
 
 
