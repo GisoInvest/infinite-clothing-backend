@@ -111,7 +111,15 @@ export const appRouter = router({
         active: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
-        return await db.createProduct(input);
+        try {
+          return await db.createProduct(input);
+        } catch (error) {
+          console.error("Product creation failed:", error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: error instanceof Error ? error.message : 'Failed to create product',
+          });
+        }
       }),
 
     update: adminProcedure

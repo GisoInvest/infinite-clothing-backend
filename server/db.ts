@@ -95,11 +95,26 @@ export async function createProduct(product: InsertProduct): Promise<Product> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-    let result;
+  // Validate required fields
+  if (!product.name) throw new Error("Product name is required");
+  if (!product.category) throw new Error("Product category is required");
+  if (product.price === undefined || product.price === null) throw new Error("Product price is required");
+
+  // Ensure arrays are properly formatted
+  const sanitizedProduct = {
+    ...product,
+    images: Array.isArray(product.images) ? product.images : [],
+    videos: Array.isArray(product.videos) ? product.videos : [],
+    colors: Array.isArray(product.colors) ? product.colors : [],
+    sizes: Array.isArray(product.sizes) ? product.sizes : [],
+  };
+
+  let result;
   try {
-    result = await db.insert(products).values(product);
+    result = await db.insert(products).values(sanitizedProduct);
   } catch (error) {
     console.error("CREATE_PRODUCT_ERROR:", error);
+    console.error("Product data:", sanitizedProduct);
     throw error;
   }
   const insertedId = Number(result[0].insertId);
