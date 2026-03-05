@@ -38,7 +38,7 @@ export const products = mysqlTable("products", {
   price: int("price").notNull(), // Price in cents to avoid decimal issues
   collection: mysqlEnum("collection", ["regular", "premium"]).default("regular").notNull(), // Collection type
   category: mysqlEnum("category", ["men", "women", "unisex", "kids-baby"]).notNull(),
-  subcategory: varchar("subcategory", { length: 100 }).notNull(), // e.g., "t-shirt", "hoodies", etc.
+  subcategory: varchar("subcategory", { length: 100 }), // e.g., "t-shirt", "hoodies", etc.
   stock: int("stock").default(0).notNull(),
   images: json("images").$type<string[]>().notNull(), // Array of image URLs
   videos: json("videos").$type<string[]>().notNull(), // Array of video URLs
