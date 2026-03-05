@@ -95,13 +95,13 @@ export const appRouter = router({
 
     create: adminProcedure
       .input(z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        price: z.number().int().positive(),
-        collection: z.enum(["regular", "premium"]).default("regular"),
-        category: z.enum(["men", "women", "unisex", "kids-baby"]),
-        subcategory: z.string().optional(),
-        stock: z.number().default(0),
+        name: z.string().min(1, 'Product name is required'),
+        description: z.string().min(1, 'Product description is required'),
+        price: z.number().int().positive('Price must be greater than 0'),
+        collection: z.enum(["regular", "premium"], { errorMap: () => ({ message: 'Please select a valid collection' }) }),
+        category: z.enum(["men", "women", "unisex", "kids-baby"], { errorMap: () => ({ message: 'Please select a valid category' }) }),
+        subcategory: z.string().optional().nullable(),
+        stock: z.number().int().nonnegative('Stock cannot be negative'),
         images: z.array(z.string()).default([]),
         videos: z.array(z.string()).default([]),
         colors: z.array(z.string()).default([]),
@@ -125,13 +125,13 @@ export const appRouter = router({
     update: adminProcedure
       .input(z.object({
         id: z.number(),
-        name: z.string().optional(),
-        description: z.string().optional(),
+        name: z.string().min(1).optional(),
+        description: z.string().min(1).optional(),
         price: z.number().int().positive().optional(),
         collection: z.enum(["regular", "premium"]).optional(),
         category: z.enum(["men", "women", "unisex", "kids-baby"]).optional(),
-        subcategory: z.string().optional(),
-        stock: z.number().optional(),
+        subcategory: z.string().optional().nullable(),
+        stock: z.number().int().nonnegative().optional(),
         images: z.array(z.string()).optional(),
         videos: z.array(z.string()).optional(),
         colors: z.array(z.string()).optional(),
@@ -139,7 +139,6 @@ export const appRouter = router({
         discount: z.number().int().min(0).max(100).optional(),
         featured: z.boolean().optional(),
         active: z.boolean().optional(),
-
       }))
       .mutation(async ({ input }) => {
         const { id, ...updates } = input;
