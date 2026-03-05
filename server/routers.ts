@@ -100,7 +100,7 @@ export const appRouter = router({
         price: z.number().int().positive(),
         collection: z.enum(["regular", "premium"]).default("regular"),
         category: z.enum(["men", "women", "unisex", "kids-baby"]),
-        subcategory: z.string(),
+        subcategory: z.string().optional(),
         stock: z.number().default(0),
         images: z.array(z.string()).default([]),
         videos: z.array(z.string()).default([]),
@@ -208,19 +208,21 @@ export const appRouter = router({
         shippingAddress: z.string(),
         items: z.string(),
         subtotal: z.number().int(),
-        shipping: z.number().int(),
+        shipping: z.number().int().optional(),
         tax: z.number().int(),
         total: z.number().int(),
       }))
       .mutation(async ({ input }) => {
         const parsedItems = JSON.parse(input.items);
+        // Free shipping - always set to 0
+        const freeShipping = 0;
         
         const { sessionId, url } = await createCheckoutSession({
           orderNumber: input.orderNumber,
           customerEmail: input.customerEmail,
           customerName: input.customerName,
           items: parsedItems,
-          shipping: input.shipping,
+          shipping: freeShipping,
           total: input.total,
           metadata: {
             orderNumber: input.orderNumber,
@@ -230,7 +232,7 @@ export const appRouter = router({
             shippingAddress: input.shippingAddress,
             items: input.items,
             subtotal: input.subtotal.toString(),
-            shipping: input.shipping.toString(),
+            shipping: freeShipping.toString(),
             tax: input.tax.toString(),
             total: input.total.toString(),
           },
@@ -263,7 +265,7 @@ export const appRouter = router({
           price: z.number().int().positive(),
         })),
         subtotal: z.number().int(),
-        shipping: z.number().int(),
+        shipping: z.number().int().optional(),
         tax: z.number().int(),
         total: z.number().int(),
         paymentIntentId: z.string().optional(),
@@ -273,9 +275,12 @@ export const appRouter = router({
         const farFutureDate = new Date();
         farFutureDate.setFullYear(farFutureDate.getFullYear() + 100);
         const cancellationDeadlineStr = farFutureDate.toISOString().slice(0, 19).replace('T', ' ');
+        // Free shipping - always set to 0
+        const freeShipping = 0;
 
         const order = await db.createOrder({
           ...input,
+          shipping: freeShipping,
           canBeCancelled: false, // Set to false to disable cancellation feature for now
           cancellationDeadline: cancellationDeadlineStr, // Far future date to satisfy database
           statusHistory: [{
