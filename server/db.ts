@@ -100,7 +100,7 @@ export async function createProduct(product: InsertProduct): Promise<Product> {
   if (!product.category) throw new Error("Product category is required");
   if (product.price === undefined || product.price === null) throw new Error("Product price is required");
 
-  // Ensure arrays are properly formatted
+  // Ensure arrays are properly formatted and serialize JSON fields
   const sanitizedProduct = {
     ...product,
     images: Array.isArray(product.images) ? product.images : [],
@@ -111,10 +111,19 @@ export async function createProduct(product: InsertProduct): Promise<Product> {
 
   let result;
   try {
-    result = await db.insert(products).values(sanitizedProduct);
+    // Drizzle with mysql2 requires explicit JSON serialization for json() columns
+    const dbValues = {
+      ...sanitizedProduct,
+      images: JSON.stringify(sanitizedProduct.images),
+      videos: JSON.stringify(sanitizedProduct.videos),
+      colors: JSON.stringify(sanitizedProduct.colors),
+      sizes: JSON.stringify(sanitizedProduct.sizes),
+    };
+    result = await db.insert(products).values(dbValues as any);
   } catch (error) {
     console.error("CREATE_PRODUCT_ERROR:", error);
     console.error("Product data:", sanitizedProduct);
+    console.error("Error details:", error instanceof Error ? error.message : error);
     throw error;
   }
   const insertedId = Number(result[0].insertId);
@@ -127,7 +136,22 @@ export async function updateProduct(id: number, updates: Partial<InsertProduct>)
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.update(products).set(updates).where(eq(products.id, id));
+  // Serialize JSON fields if they are provided as arrays
+  const dbUpdates: any = { ...updates };
+  if (Array.isArray(updates.images)) {
+    dbUpdates.images = JSON.stringify(updates.images);
+  }
+  if (Array.isArray(updates.videos)) {
+    dbUpdates.videos = JSON.stringify(updates.videos);
+  }
+  if (Array.isArray(updates.colors)) {
+    dbUpdates.colors = JSON.stringify(updates.colors);
+  }
+  if (Array.isArray(updates.sizes)) {
+    dbUpdates.sizes = JSON.stringify(updates.sizes);
+  }
+
+  await db.update(products).set(dbUpdates).where(eq(products.id, id));
   
   const updated = await db.select().from(products).where(eq(products.id, id)).limit(1);
   return updated.length > 0 ? updated[0] : undefined;
