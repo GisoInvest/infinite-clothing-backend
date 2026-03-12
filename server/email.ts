@@ -435,3 +435,122 @@ export async function sendOrderCancellationEmail(data: OrderCancellationEmailDat
     throw error;
   }
 }
+
+
+// Customization Enquiry Email
+export async function sendCustomizationEnquiryEmail(customerEmail: string, customerName: string, enquiryNumber: string) {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('Email not sent - SENDGRID_API_KEY not configured');
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #00ff88; padding: 20px; border-radius: 8px; text-align: center; }
+        .content { padding: 20px; color: #333; }
+        .enquiry-number { font-size: 18px; font-weight: bold; color: #00ff88; margin: 10px 0; }
+        .footer { background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Customization Enquiry Received</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${customerName},</p>
+          <p>Thank you for submitting your customization enquiry! We're excited to help bring your design to life.</p>
+          <p><strong>Your Enquiry Number:</strong></p>
+          <div class="enquiry-number">${enquiryNumber}</div>
+          <p>Our team will review your request and get back to you within 24-48 hours with a detailed quote and timeline.</p>
+          <p>If you have any questions in the meantime, feel free to reach out to us.</p>
+          <p>Best regards,<br>INF!NITE Clothing Team</p>
+        </div>
+        <div class="footer">
+          <p>&copy; 2026 INF!NITE Clothing. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const msg = {
+    to: customerEmail,
+    from: FROM_EMAIL,
+    subject: `Customization Enquiry Received - #${enquiryNumber}`,
+    html,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Customization enquiry email sent to ${customerEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending customization enquiry email:', error);
+    throw error;
+  }
+}
+
+// Business Enquiry Email
+export async function sendBusinessEnquiryEmail(contactEmail: string, contactName: string, enquiryNumber: string) {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('Email not sent - SENDGRID_API_KEY not configured');
+    return { success: false, message: 'Email service not configured' };
+  }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #00ff88; padding: 20px; border-radius: 8px; text-align: center; }
+        .content { padding: 20px; color: #333; }
+        .enquiry-number { font-size: 18px; font-weight: bold; color: #00ff88; margin: 10px 0; }
+        .footer { background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Partnership Enquiry Received</h1>
+        </div>
+        <div class="content">
+          <p>Hi ${contactName},</p>
+          <p>Thank you for your interest in partnering with INF!NITE Clothing! We're thrilled to explore this opportunity with you.</p>
+          <p><strong>Your Enquiry Number:</strong></p>
+          <div class="enquiry-number">${enquiryNumber}</div>
+          <p>Our business development team will review your enquiry and contact you within 2-3 business days to discuss partnership opportunities, terms, and next steps.</p>
+          <p>We look forward to building a successful partnership with you!</p>
+          <p>Best regards,<br>INF!NITE Clothing - Business Development Team</p>
+        </div>
+        <div class="footer">
+          <p>&copy; 2026 INF!NITE Clothing. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const msg = {
+    to: contactEmail,
+    from: FROM_EMAIL,
+    subject: `Partnership Enquiry Received - #${enquiryNumber}`,
+    html,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Business enquiry email sent to ${contactEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending business enquiry email:', error);
+    throw error;
+  }
+}

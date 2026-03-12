@@ -1,6 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist } from "../drizzle/schema";
+import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist, customizationEnquiries, CustomizationEnquiry, InsertCustomizationEnquiry, businessEnquiries, BusinessEnquiry, InsertBusinessEnquiry } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1013,4 +1013,91 @@ export async function getWishlistWithProducts(userId: string) {
     .where(eq(wishlist.userId, userId));
   
   return wishlistItems;
+}
+
+
+// Customization Enquiries functions
+export async function createCustomizationEnquiry(data: InsertCustomizationEnquiry): Promise<CustomizationEnquiry | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(customizationEnquiries).values(data);
+  const insertedId = Number(result[0].insertId);
+  
+  const newEnquiry = await db.select().from(customizationEnquiries).where(eq(customizationEnquiries.id, insertedId)).limit(1);
+  return newEnquiry[0] || null;
+}
+
+export async function getAllCustomizationEnquiries(): Promise<CustomizationEnquiry[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(customizationEnquiries).orderBy(desc(customizationEnquiries.createdAt));
+}
+
+export async function getCustomizationEnquiryById(id: number): Promise<CustomizationEnquiry | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(customizationEnquiries).where(eq(customizationEnquiries.id, id));
+  return result[0] || null;
+}
+
+export async function updateCustomizationEnquiry(id: number, updates: Partial<InsertCustomizationEnquiry>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.update(customizationEnquiries).set(updates).where(eq(customizationEnquiries.id, id));
+  return true;
+}
+
+export async function deleteCustomizationEnquiry(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.delete(customizationEnquiries).where(eq(customizationEnquiries.id, id));
+  return result[0].affectedRows > 0;
+}
+
+// Business Enquiries functions
+export async function createBusinessEnquiry(data: InsertBusinessEnquiry): Promise<BusinessEnquiry | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.insert(businessEnquiries).values(data);
+  const insertedId = Number(result[0].insertId);
+  
+  const newEnquiry = await db.select().from(businessEnquiries).where(eq(businessEnquiries.id, insertedId)).limit(1);
+  return newEnquiry[0] || null;
+}
+
+export async function getAllBusinessEnquiries(): Promise<BusinessEnquiry[]> {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(businessEnquiries).orderBy(desc(businessEnquiries.createdAt));
+}
+
+export async function getBusinessEnquiryById(id: number): Promise<BusinessEnquiry | null> {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(businessEnquiries).where(eq(businessEnquiries.id, id));
+  return result[0] || null;
+}
+
+export async function updateBusinessEnquiry(id: number, updates: Partial<InsertBusinessEnquiry>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  await db.update(businessEnquiries).set(updates).where(eq(businessEnquiries.id, id));
+  return true;
+}
+
+export async function deleteBusinessEnquiry(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.delete(businessEnquiries).where(eq(businessEnquiries.id, id));
+  return result[0].affectedRows > 0;
 }

@@ -334,3 +334,55 @@ export const wishlist = mysqlTable("wishlist", {
 
 export type Wishlist = typeof wishlist.$inferSelect;
 export type InsertWishlist = typeof wishlist.$inferInsert;
+
+/**
+ * Customization enquiries table for custom printing requests
+ */
+export const customizationEnquiries = mysqlTable("customizationEnquiries", {
+  id: int("id").autoincrement().primaryKey(),
+  enquiryNumber: varchar("enquiryNumber", { length: 50 }).notNull().unique(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  productType: varchar("productType", { length: 100 }).notNull(), // T-Shirt, Hoodie, etc.
+  quantity: int("quantity").notNull(),
+  fabricQuality: int("fabricQuality").notNull(), // GSM value (150, 180, 200, 250, 300, 400)
+  designDescription: text("designDescription"),
+  specialRequests: text("specialRequests"),
+  designFileUrl: text("designFileUrl"), // URL to uploaded design file
+  estimatedPrice: int("estimatedPrice"), // In cents
+  status: mysqlEnum("status", ["pending", "reviewed", "quoted", "in_production", "completed", "cancelled"]).default("pending").notNull(),
+  adminNotes: text("adminNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomizationEnquiry = typeof customizationEnquiries.$inferSelect;
+export type InsertCustomizationEnquiry = typeof customizationEnquiries.$inferInsert;
+
+/**
+ * Business enquiries table for B2B partnership requests
+ */
+export const businessEnquiries = mysqlTable("businessEnquiries", {
+  id: int("id").autoincrement().primaryKey(),
+  enquiryNumber: varchar("enquiryNumber", { length: 50 }).notNull().unique(),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  businessType: varchar("businessType", { length: 100 }).notNull(), // Retail Store, Online Boutique, etc.
+  website: varchar("website", { length: 500 }),
+  country: varchar("country", { length: 100 }).notNull(),
+  annualRevenue: varchar("annualRevenue", { length: 100 }),
+  contactName: varchar("contactName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  productInterest: varchar("productInterest", { length: 255 }).notNull(),
+  businessBackground: text("businessBackground").notNull(),
+  marketingStrategy: text("marketingStrategy"),
+  status: mysqlEnum("status", ["pending", "contacted", "negotiating", "approved", "rejected", "archived"]).default("pending").notNull(),
+  partnershipTier: mysqlEnum("partnershipTier", ["retail", "distribution", "online", "none"]).default("none"),
+  adminNotes: text("adminNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BusinessEnquiry = typeof businessEnquiries.$inferSelect;
+export type InsertBusinessEnquiry = typeof businessEnquiries.$inferInsert;

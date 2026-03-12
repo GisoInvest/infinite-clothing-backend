@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { createPaymentIntent, confirmPaymentIntent } from "./payment";
 import { createCheckoutSession } from "./checkout";
-import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusEmail, sendOrderCancellationEmail } from "./email";
+import { sendOrderConfirmationEmail, sendAdminOrderNotification, sendOrderStatusEmail, sendOrderCancellationEmail, sendCustomizationEnquiryEmail, sendBusinessEnquiryEmail } from "./email";
 import { assistantRouter } from "./routers/assistant";
 import { simpleOrdersRouter } from "./routers/simpleOrders";
 import { stripeSessionRouter } from "./routers/stripeSession";
@@ -1138,6 +1138,113 @@ export const appRouter = router({
       .input(z.object({ productId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await db.removeFromWishlist(ctx.user.openId, input.productId);
+        return { success: true };
+      }),
+  }),
+  // Customization enquiries router
+  customizationEnquiries: router({
+    // Public: Submit customization enquiry
+    submit: publicProcedure
+      .input(z.object({
+        fullName: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().min(1),
+        productType: z.string().min(1),
+        quantity: z.number().int().positive(),
+        fabricQuality: z.number().int(),
+        designDescription: z.string().optional(),
+        specialRequests: z.string().optional(),
+        designFileUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const enquiryNumber = `CUST-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const result = await db.createCustomizationEnquiry({
+          ...input,
+          enquiryNumber,
+          status: 'pending',
+        });
+        // Send confirmation email to customer
+        await sendCustomizationEnquiryEmail(input.email, input.fullName, enquiryNumber);
+        // Send admin notification
+        await sendAdminOrderNotification(`New Customization Enquiry: ${enquiryNumber}`, `Customer: ${input.fullName}\nEmail: ${input.email}\nProduct: ${input.productType}\nQuantity: ${input.quantity}`);
+        return { success: true, enquiryNumber };
+      }),
+    // Admin: Get all enquiries
+    getAll: adminProcedure.query(async () => {
+      return await db.getAllCustomizationEnquiries();
+    }),
+    // Admin: Get enquiry by ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getCustomizationEnquiryById(input.id);
+      }),
+    // Admin: Update enquiry status and notes
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['pending', 'reviewed', 'quoted', 'in_production', 'completed', 'cancelled']).optional(),
+        estimatedPrice: z.number().optional(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        await db.updateCustomizationEnquiry(id, updates);
+        return { success: true };
+      }),
+  }),
+  // Business enquiries router
+  businessEnquiries: router({
+    // Public: Submit business enquiry
+    submit: publicProcedure
+      .input(z.object({
+        companyName: z.string().min(1),
+        businessType: z.string().min(1),
+        website: z.string().optional(),
+        country: z.string().min(1),
+        annualRevenue: z.string().optional(),
+        contactName: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().min(1),
+        productInterest: z.string().min(1),
+        businessBackground: z.string().min(1),
+        marketingStrategy: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const enquiryNumber = `BIZ-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const result = await db.createBusinessEnquiry({
+          ...input,
+          enquiryNumber,
+          status: 'pending',
+          partnershipTier: 'none',
+        });
+        // Send confirmation email to business contact
+        await sendBusinessEnquiryEmail(input.email, input.contactName, enquiryNumber);
+        // Send admin notification
+        await sendAdminOrderNotification(`New Business Enquiry: ${enquiryNumber}`, `Company: ${input.companyName}\nContact: ${input.contactName}\nEmail: ${input.email}\nType: ${input.businessType}`);
+        return { success: true, enquiryNumber };
+      }),
+    // Admin: Get all enquiries
+    getAll: adminProcedure.query(async () => {
+      return await db.getAllBusinessEnquiries();
+    }),
+    // Admin: Get enquiry by ID
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getBusinessEnquiryById(input.id);
+      }),
+    // Admin: Update enquiry status and partnership tier
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(['pending', 'contacted', 'negotiating', 'approved', 'rejected', 'archived']).optional(),
+        partnershipTier: z.enum(['retail', 'distribution', 'online', 'none']).optional(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        await db.updateBusinessEnquiry(id, updates);
         return { success: true };
       }),
   }),
