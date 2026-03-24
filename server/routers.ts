@@ -1248,6 +1248,63 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Analytics and tracking endpoints
+  analytics: router({
+    trackPageView: publicProcedure
+      .input(z.object({
+        sessionId: z.string(),
+        page: z.string(),
+        referrer: z.string().optional(),
+        userAgent: z.string().optional(),
+        ipAddress: z.string().optional(),
+        country: z.string().optional(),
+        city: z.string().optional(),
+        deviceType: z.enum(['mobile', 'tablet', 'desktop']),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await db.trackPageView(input);
+        return { success: !!result };
+      }),
+    
+    trackInteraction: publicProcedure
+      .input(z.object({
+        sessionId: z.string(),
+        eventType: z.enum([
+          'page_view', 'product_click', 'add_to_cart', 'remove_from_cart',
+          'add_to_wishlist', 'remove_from_wishlist', 'checkout_start',
+          'checkout_complete', 'search', 'filter_applied', 'form_submission', 'button_click'
+        ]),
+        eventData: z.record(z.any()).optional(),
+        page: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await db.trackUserInteraction(input);
+        return { success: !!result };
+      }),
+    
+    getDashboard: adminProcedure.query(async () => {
+      return await db.getAnalyticsDashboard();
+    }),
+    
+    getRecentPageViews: adminProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await db.getRecentPageViews(input.limit || 50);
+      }),
+    
+    getRecentInteractions: adminProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return await db.getRecentUserInteractions(input.limit || 50);
+      }),
+    
+    getActivityStats: adminProcedure
+      .input(z.object({ date: z.date().optional() }))
+      .query(async ({ input }) => {
+        return await db.getActivityStats(input.date);
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 

@@ -386,3 +386,73 @@ export const businessEnquiries = mysqlTable("businessEnquiries", {
 
 export type BusinessEnquiry = typeof businessEnquiries.$inferSelect;
 export type InsertBusinessEnquiry = typeof businessEnquiries.$inferInsert;
+
+
+/**
+ * Page views tracking table for analytics
+ */
+export const pageViews = mysqlTable("pageViews", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 100 }).notNull(),
+  page: varchar("page", { length: 255 }).notNull(), // e.g., "/", "/shop", "/product/123"
+  referrer: varchar("referrer", { length: 500 }),
+  userAgent: text("userAgent"),
+  ipAddress: varchar("ipAddress", { length: 50 }),
+  country: varchar("country", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  deviceType: mysqlEnum("deviceType", ["mobile", "tablet", "desktop"]).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type PageView = typeof pageViews.$inferSelect;
+export type InsertPageView = typeof pageViews.$inferInsert;
+
+/**
+ * User interactions tracking table
+ */
+export const userInteractions = mysqlTable("userInteractions", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: varchar("sessionId", { length: 100 }).notNull(),
+  eventType: mysqlEnum("eventType", [
+    "page_view",
+    "product_click",
+    "add_to_cart",
+    "remove_from_cart",
+    "add_to_wishlist",
+    "remove_from_wishlist",
+    "checkout_start",
+    "checkout_complete",
+    "search",
+    "filter_applied",
+    "form_submission",
+    "button_click"
+  ]).notNull(),
+  eventData: json("eventData").$type<Record<string, any>>(),
+  page: varchar("page", { length: 255 }).notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type UserInteraction = typeof userInteractions.$inferSelect;
+export type InsertUserInteraction = typeof userInteractions.$inferInsert;
+
+/**
+ * Real-time activity summary table
+ */
+export const activitySummary = mysqlTable("activitySummary", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull(),
+  totalPageViews: int("totalPageViews").default(0).notNull(),
+  uniqueVisitors: int("uniqueVisitors").default(0).notNull(),
+  totalAddToCart: int("totalAddToCart").default(0).notNull(),
+  totalCheckouts: int("totalCheckouts").default(0).notNull(),
+  totalOrders: int("totalOrders").default(0).notNull(),
+  totalRevenue: int("totalRevenue").default(0).notNull(), // In cents
+  mostViewedPage: varchar("mostViewedPage", { length: 255 }),
+  topProduct: int("topProduct"), // Product ID
+  averageSessionDuration: int("averageSessionDuration").default(0).notNull(), // In seconds
+  bounceRate: decimal("bounceRate", { precision: 5, scale: 2 }).default("0.00").notNull(), // Percentage
+  timestamp: timestamp("timestamp").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ActivitySummary = typeof activitySummary.$inferSelect;
+export type InsertActivitySummary = typeof activitySummary.$inferInsert;

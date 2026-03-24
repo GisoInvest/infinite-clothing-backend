@@ -1,6 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist, customizationEnquiries, CustomizationEnquiry, InsertCustomizationEnquiry, businessEnquiries, BusinessEnquiry, InsertBusinessEnquiry } from "../drizzle/schema";
+import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist, customizationEnquiries, CustomizationEnquiry, InsertCustomizationEnquiry, businessEnquiries, BusinessEnquiry, InsertBusinessEnquiry, pageViews, PageView, InsertPageView, userInteractions, UserInteraction, InsertUserInteraction, activitySummary, ActivitySummary, InsertActivitySummary } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1100,4 +1100,137 @@ export async function deleteBusinessEnquiry(id: number): Promise<boolean> {
   
   const result = await db.delete(businessEnquiries).where(eq(businessEnquiries.id, id));
   return result[0].affectedRows > 0;
+}
+
+
+// ============ ACTIVITY TRACKING FUNCTIONS ============
+
+export async function trackPageView(pageViewData: InsertPageView): Promise<PageView | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(pageViews).values(pageViewData);
+    return {
+      id: result[0].insertId as number,
+      ...pageViewData,
+      timestamp: new Date(),
+    } as PageView;
+  } catch (error) {
+    console.error("[Database] Failed to track page view:", error);
+    return null;
+  }
+}
+
+export async function trackUserInteraction(interactionData: InsertUserInteraction): Promise<UserInteraction | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(userInteractions).values(interactionData);
+    return {
+      id: result[0].insertId as number,
+      ...interactionData,
+      timestamp: new Date(),
+    } as UserInteraction;
+  } catch (error) {
+    console.error("[Database] Failed to track user interaction:", error);
+    return null;
+  }
+}
+
+export async function getRecentPageViews(limit: number = 50): Promise<PageView[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db.select().from(pageViews).orderBy(desc(pageViews.timestamp)).limit(limit);
+  } catch (error) {
+    console.error("[Database] Failed to get recent page views:", error);
+    return [];
+  }
+}
+
+export async function getRecentUserInteractions(limit: number = 50): Promise<UserInteraction[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db.select().from(userInteractions).orderBy(desc(userInteractions.timestamp)).limit(limit);
+  } catch (error) {
+    console.error("[Database] Failed to get recent user interactions:", error);
+    return [];
+  }
+}
+
+export async function getActivityStats(date?: Date): Promise<ActivitySummary | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const targetDate = date ? new Date(date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    const stats = await db.select().from(activitySummary).where(eq(activitySummary.date, targetDate as any));
+    return stats.length > 0 ? stats[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get activity stats:", error);
+    return null;
+  }
+}
+
+export async function updateActivitySummary(date: Date, updates: Partial<ActivitySummary>): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    const targetDate = new Date(date).toISOString().split('T')[0];
+    const existing = await db.select().from(activitySummary).where(eq(activitySummary.date, targetDate as any));
+    
+    if (existing.length > 0) {
+      await db.update(activitySummary).set(updates).where(eq(activitySummary.date, targetDate as any));
+    } else {
+      await db.insert(activitySummary).values({
+        date: targetDate as any,
+        ...updates,
+      });
+    }
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update activity summary:", error);
+    return false;
+  }
+}
+
+export async function getAnalyticsDashboard() {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const todayStats = await db.select().from(activitySummary).where(eq(activitySummary.date, today as any));
+    const recentPageViews = await db.select().from(pageViews).orderBy(desc(pageViews.timestamp)).limit(20);
+    const recentInteractions = await db.select().from(userInteractions).orderBy(desc(userInteractions.timestamp)).limit(20);
+    
+    // Get top pages
+    const topPages = await db.select({
+      page: pageViews.page,
+      count: sql<number>`COUNT(*) as count`,
+    }).from(pageViews).groupBy(pageViews.page).orderBy(desc(sql`COUNT(*)`)).limit(10);
+
+    // Get top events
+    const topEvents = await db.select({
+      eventType: userInteractions.eventType,
+      count: sql<number>`COUNT(*) as count`,
+    }).from(userInteractions).groupBy(userInteractions.eventType).orderBy(desc(sql`COUNT(*)`)).limit(10);
+
+    return {
+      todayStats: todayStats.length > 0 ? todayStats[0] : null,
+      recentPageViews,
+      recentInteractions,
+      topPages,
+      topEvents,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get analytics dashboard:", error);
+    return null;
+  }
 }
