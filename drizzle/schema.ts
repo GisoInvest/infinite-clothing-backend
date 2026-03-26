@@ -456,3 +456,27 @@ export const activitySummary = mysqlTable("activitySummary", {
 
 export type ActivitySummary = typeof activitySummary.$inferSelect;
 export type InsertActivitySummary = typeof activitySummary.$inferInsert;
+
+/**
+ * Customers table for storing registration details and email marketing
+ */
+export const customers = mysqlTable("customers", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  firstName: varchar("firstName", { length: 255 }).notNull(),
+  lastName: varchar("lastName", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }),
+  stylePreferences: json("stylePreferences").$type<string[]>().notNull(), // e.g., ["streetwear", "casual", "luxury"]
+  ageGroup: varchar("ageGroup", { length: 50 }), // e.g., "18-25", "25-35", "35-50", "50+"
+  country: varchar("country", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  newsletter: boolean("newsletter").default(true).notNull(), // Opted in for email marketing
+  marketingConsent: boolean("marketingConsent").default(true).notNull(),
+  registrationSource: varchar("registrationSource", { length: 50 }).default("entry-portal").notNull(),
+  lastActivityDate: timestamp("lastActivityDate").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = typeof customers.$inferInsert;

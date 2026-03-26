@@ -1305,6 +1305,78 @@ export const appRouter = router({
         return await db.getActivityStats(input.date);
       }),
   }),
+
+  // ============ CUSTOMERS ============
+  customers: router({
+    register: publicProcedure
+      .input(z.object({
+        firstName: z.string().min(1),
+        lastName: z.string().optional(),
+        email: z.string().email(),
+        phone: z.string().optional(),
+        ageGroup: z.string().optional(),
+        country: z.string().optional(),
+        city: z.string().optional(),
+        stylePreferences: z.array(z.string()).min(1),
+        newsletter: z.boolean().default(true),
+        marketingConsent: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const customer = await db.registerCustomer({
+          firstName: input.firstName,
+          lastName: input.lastName || '',
+          email: input.email,
+          phone: input.phone,
+          ageGroup: input.ageGroup,
+          country: input.country,
+          city: input.city,
+          stylePreferences: input.stylePreferences,
+          newsletter: input.newsletter,
+          marketingConsent: input.marketingConsent,
+          registrationSource: 'entry-portal',
+        });
+        if (!customer) throw new Error('Failed to register customer');
+        return customer;
+      }),
+
+    getByEmail: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .query(async ({ input }) => {
+        return await db.getCustomerByEmail(input.email);
+      }),
+
+    getAll: adminProcedure.query(async () => {
+      return await db.getAllCustomers();
+    }),
+
+    update: adminProcedure
+      .input(z.object({
+        email: z.string().email(),
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        phone: z.string().optional(),
+        ageGroup: z.string().optional(),
+        country: z.string().optional(),
+        city: z.string().optional(),
+        stylePreferences: z.array(z.string()).optional(),
+        newsletter: z.boolean().optional(),
+        marketingConsent: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { email, ...data } = input;
+        return await db.updateCustomer(email, data);
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteCustomer(input.email);
+      }),
+
+    getStats: adminProcedure.query(async () => {
+      return await db.getCustomerStats();
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;;
 

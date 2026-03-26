@@ -1,6 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist, customizationEnquiries, CustomizationEnquiry, InsertCustomizationEnquiry, businessEnquiries, BusinessEnquiry, InsertBusinessEnquiry, pageViews, PageView, InsertPageView, userInteractions, UserInteraction, InsertUserInteraction, activitySummary, ActivitySummary, InsertActivitySummary } from "../drizzle/schema";
+import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist, customizationEnquiries, CustomizationEnquiry, InsertCustomizationEnquiry, businessEnquiries, BusinessEnquiry, InsertBusinessEnquiry, pageViews, PageView, InsertPageView, userInteractions, UserInteraction, InsertUserInteraction, activitySummary, ActivitySummary, InsertActivitySummary, customers, Customer, InsertCustomer } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1231,6 +1231,135 @@ export async function getAnalyticsDashboard() {
     };
   } catch (error) {
     console.error("[Database] Failed to get analytics dashboard:", error);
+    return null;
+  }
+}
+
+
+// ============ CUSTOMER REGISTRATION & MANAGEMENT ============
+
+export async function registerCustomer(data: InsertCustomer): Promise<Customer | null> {
+  try {
+    const db = await getDb();
+    if (!db) {
+      console.warn("[Database] Cannot register customer: database not available");
+      return null;
+    }
+
+    // Check if customer already exists
+    const existing = await db.select().from(customers).where(eq(customers.email, data.email)).limit(1);
+    if (existing.length > 0) {
+      // Update existing customer
+      const updated = await db.update(customers).set({
+        ...data,
+        updatedAt: new Date(),
+      }).where(eq(customers.email, data.email));
+      return existing[0];
+    }
+
+    // Create new customer
+    const result = await db.insert(customers).values(data);
+    const customerId = result[0];
+    
+    const newCustomer = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
+    return newCustomer.length > 0 ? newCustomer[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to register customer:", error);
+    return null;
+  }
+}
+
+export async function getCustomerByEmail(email: string): Promise<Customer | null> {
+  try {
+    const db = await getDb();
+    if (!db) return null;
+
+    const result = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get customer:", error);
+    return null;
+  }
+}
+
+export async function getAllCustomers(): Promise<Customer[]> {
+  try {
+    const db = await getDb();
+    if (!db) return [];
+
+    return await db.select().from(customers).orderBy(desc(customers.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get customers:", error);
+    return [];
+  }
+}
+
+export async function updateCustomer(email: string, data: Partial<InsertCustomer>): Promise<Customer | null> {
+  try {
+    const db = await getDb();
+    if (!db) return null;
+
+    await db.update(customers).set({
+      ...data,
+      updatedAt: new Date(),
+    }).where(eq(customers.email, email));
+
+    return await getCustomerByEmail(email);
+  } catch (error) {
+    console.error("[Database] Failed to update customer:", error);
+    return null;
+  }
+}
+
+export async function deleteCustomer(email: string): Promise<boolean> {
+  try {
+    const db = await getDb();
+    if (!db) return false;
+
+    await db.delete(customers).where(eq(customers.email, email));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete customer:", error);
+    return false;
+  }
+}
+
+export async function getCustomerStats(): Promise<{
+  totalCustomers: number;
+  newsletterSubscribers: number;
+  marketingConsent: number;
+  topCountries: Array<{ country: string; count: number }>;
+  topAgeGroups: Array<{ ageGroup: string; count: number }>;
+  topStylePreferences: Array<{ preference: string; count: number }>;
+} | null> {
+  try {
+    const db = await getDb();
+    if (!db) return null;
+
+    const totalCustomers = await db.select({ count: sql<number>`COUNT(*) as count` }).from(customers);
+    const newsletterSubscribers = await db.select({ count: sql<number>`COUNT(*) as count` }).from(customers).where(eq(customers.newsletter, true));
+    const marketingConsent = await db.select({ count: sql<number>`COUNT(*) as count` }).from(customers).where(eq(customers.marketingConsent, true));
+
+    const topCountries = await db.select({
+      country: customers.country,
+      count: sql<number>`COUNT(*) as count`,
+    }).from(customers).groupBy(customers.country).orderBy(desc(sql`COUNT(*)`)).limit(10);
+
+    const topAgeGroups = await db.select({
+      ageGroup: customers.ageGroup,
+      count: sql<number>`COUNT(*) as count`,
+    }).from(customers).groupBy(customers.ageGroup).orderBy(desc(sql`COUNT(*)`)).limit(10);
+
+    return {
+      totalCustomers: totalCustomers[0]?.count || 0,
+      newsletterSubscribers: newsletterSubscribers[0]?.count || 0,
+      marketingConsent: marketingConsent[0]?.count || 0,
+      topCountries: topCountries.map(item => ({ country: item.country || 'Unknown', count: item.count })),
+      topAgeGroups: topAgeGroups.map(item => ({ ageGroup: item.ageGroup || 'Unknown', count: item.count })),
+      topStylePreferences: [],
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get customer stats:", error);
     return null;
   }
 }
