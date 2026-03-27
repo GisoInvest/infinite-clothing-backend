@@ -1111,11 +1111,40 @@ export async function trackPageView(pageViewData: InsertPageView): Promise<PageV
 
   try {
     const result = await db.insert(pageViews).values(pageViewData);
-    return {
+    const pageView = {
       id: result[0].insertId as number,
       ...pageViewData,
       timestamp: new Date(),
     } as PageView;
+
+    // Update activity summary for today
+    const today = new Date().toISOString().split('T')[0];
+    const existing = await db.select().from(activitySummary).where(eq(activitySummary.date, today as any));
+    
+    if (existing.length > 0) {
+      // Increment page view count
+      await db.update(activitySummary)
+        .set({
+          totalPageViews: sql`totalPageViews + 1`,
+          timestamp: new Date(),
+        })
+        .where(eq(activitySummary.date, today as any));
+    } else {
+      // Create new activity summary for today
+      await db.insert(activitySummary).values({
+        date: today as any,
+        totalPageViews: 1,
+        uniqueVisitors: 0,
+        totalAddToCart: 0,
+        totalCheckouts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageSessionDuration: 0,
+        bounceRate: 0 as any,
+      });
+    }
+
+    return pageView;
   } catch (error) {
     console.error("[Database] Failed to track page view:", error);
     return null;
@@ -1128,11 +1157,41 @@ export async function trackUserInteraction(interactionData: InsertUserInteractio
 
   try {
     const result = await db.insert(userInteractions).values(interactionData);
-    return {
+    const interaction = {
       id: result[0].insertId as number,
       ...interactionData,
       timestamp: new Date(),
     } as UserInteraction;
+
+    // Update activity summary for today based on event type
+    const today = new Date().toISOString().split('T')[0];
+    const existing = await db.select().from(activitySummary).where(eq(activitySummary.date, today as any));
+    
+    const updates: Record<string, any> = { timestamp: new Date() };
+    
+    if (interactionData.eventType === 'add_to_cart') {
+      updates.totalAddToCart = sql`totalAddToCart + 1`;
+    } else if (interactionData.eventType === 'checkout_complete') {
+      updates.totalCheckouts = sql`totalCheckouts + 1`;
+    }
+
+    if (existing.length > 0 && Object.keys(updates).length > 1) {
+      await db.update(activitySummary).set(updates).where(eq(activitySummary.date, today as any));
+    } else if (Object.keys(updates).length > 1) {
+      await db.insert(activitySummary).values({
+        date: today as any,
+        totalPageViews: 0,
+        uniqueVisitors: 0,
+        totalAddToCart: interactionData.eventType === 'add_to_cart' ? 1 : 0,
+        totalCheckouts: interactionData.eventType === 'checkout_complete' ? 1 : 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        averageSessionDuration: 0,
+        bounceRate: 0 as any,
+      });
+    }
+
+    return interaction;
   } catch (error) {
     console.error("[Database] Failed to track user interaction:", error);
     return null;
