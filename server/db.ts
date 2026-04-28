@@ -1317,8 +1317,8 @@ export async function registerCustomer(data: InsertCustomer): Promise<Customer |
     }
 
     // Create new customer
-    const result = await db.insert(customers).values(data);
-    const customerId = result[0];
+    const [result] = await db.insert(customers).values(data);
+    const customerId = result.insertId;
     
     const newCustomer = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
     return newCustomer.length > 0 ? newCustomer[0] : null;
