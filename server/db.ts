@@ -1317,9 +1317,14 @@ export async function registerCustomer(data: InsertCustomer): Promise<Customer |
     }
 
     // Create new customer
-    const [result] = await db.insert(customers).values(data);
+    const [result] = await db.insert(customers).values(data) as any;
     const customerId = result.insertId;
     
+    if (!customerId) {
+      console.error("[Database] Failed to get insertId after customer registration");
+      return null;
+    }
+
     const newCustomer = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
     return newCustomer.length > 0 ? newCustomer[0] : null;
   } catch (error) {
