@@ -1,5 +1,6 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { eq } from "drizzle-orm";
 import { InsertUser, users, products, Product, InsertProduct, orders, Order, InsertOrder, audioTracks, AudioTrack, InsertAudioTrack, siteSettings, SiteSetting, InsertSiteSetting, blogPosts, BlogPost, InsertBlogPost, productReviews, ProductReview, InsertProductReview, newsletterSubscribers, NewsletterSubscriber, InsertNewsletterSubscriber, emailCampaigns, EmailCampaign, InsertEmailCampaign, discountCodes, DiscountCode, InsertDiscountCode, abandonedCarts, AbandonedCart, InsertAbandonedCart, outfits, Outfit, InsertOutfit, testimonials, Testimonial, InsertTestimonial, wishlist, Wishlist, InsertWishlist, customizationEnquiries, CustomizationEnquiry, InsertCustomizationEnquiry, businessEnquiries, BusinessEnquiry, InsertBusinessEnquiry, pageViews, PageView, InsertPageView, userInteractions, UserInteraction, InsertUserInteraction, activitySummary, ActivitySummary, InsertActivitySummary, customers, Customer, InsertCustomer } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1318,11 +1319,14 @@ export async function registerCustomer(data: InsertCustomer): Promise<Customer |
 
     // Create new customer
     const [result] = await db.insert(customers).values(data) as any;
+    
+    // For MySQL, the insertId is in the result object
     const customerId = result.insertId;
     
     if (!customerId) {
-      console.error("[Database] Failed to get insertId after customer registration");
-      return null;
+      // If no insertId, try to fetch by email as a fallback
+      const fallback = await db.select().from(customers).where(eq(customers.email, data.email)).limit(1);
+      return fallback.length > 0 ? fallback[0] : null;
     }
 
     const newCustomer = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
