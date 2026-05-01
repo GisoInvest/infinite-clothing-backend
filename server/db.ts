@@ -1318,19 +1318,16 @@ export async function registerCustomer(data: InsertCustomer): Promise<Customer |
     }
 
     // Create new customer
-    const [result] = await db.insert(customers).values(data) as any;
-    
-    // For MySQL, the insertId is in the result object
-    const customerId = result.insertId;
-    
-    if (!customerId) {
-      // If no insertId, try to fetch by email as a fallback
-      const fallback = await db.select().from(customers).where(eq(customers.email, data.email)).limit(1);
-      return fallback.length > 0 ? fallback[0] : null;
+    try {
+      await db.insert(customers).values(data);
+      
+      // Fetch the newly created customer by email
+      const newCustomer = await db.select().from(customers).where(eq(customers.email, data.email)).limit(1);
+      return newCustomer.length > 0 ? newCustomer[0] : null;
+    } catch (insertError) {
+      console.error("[Database] Insert error:", insertError);
+      throw insertError;
     }
-
-    const newCustomer = await db.select().from(customers).where(eq(customers.id, customerId)).limit(1);
-    return newCustomer.length > 0 ? newCustomer[0] : null;
   } catch (error) {
     console.error("[Database] Failed to register customer:", error);
     return null;
