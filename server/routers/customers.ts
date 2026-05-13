@@ -45,6 +45,7 @@ export const customersRouter = router({
         // Create customer
         const result = await db.insert(customers).values({
           email: input.email,
+          password: hashedPassword,
           firstName: input.firstName,
           lastName: input.lastName,
           phone: input.phone,
