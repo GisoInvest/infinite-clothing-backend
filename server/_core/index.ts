@@ -59,6 +59,10 @@ async function startServer() {
       res.status(500).json({ success: false, message: "Webhook failed" });
     }
   });
+  // Health check endpoint (used by frontend keep-alive ping to prevent cold starts)
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
   // Sitemap generation
   app.get("/sitemap.xml", generateSitemap);
   // tRPC API
