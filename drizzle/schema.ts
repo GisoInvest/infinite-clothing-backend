@@ -463,6 +463,7 @@ export type InsertActivitySummary = typeof activitySummary.$inferInsert;
 export const customers = mysqlTable("customers", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
   firstName: varchar("firstName", { length: 255 }).notNull(),
   lastName: varchar("lastName", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 50 }),
