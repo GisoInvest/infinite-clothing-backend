@@ -13,6 +13,7 @@ import adminAuthRouter from "../admin-auth";
 import { generateSitemap } from "../sitemap";
 import { serveStatic, setupVite } from "./vite";
 import { seedQRAmbassadorCodes } from "../db";
+import { runMigrations } from "../migrations";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -89,6 +90,14 @@ async function startServer() {
 
   server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+    
+    // Run database migrations on startup
+    try {
+      await runMigrations();
+    } catch (error) {
+      console.error("Failed to run migrations:", error);
+      // Don't exit on migration failure, server can still run
+    }
     
     // Seed QR ambassador discount codes on startup
     try {
